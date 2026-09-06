@@ -3,14 +3,18 @@
 /*
   DealerPulse design tokens.
 
-  Committed to a single light theme: this is a daytime operations tool that
-  will be read on a showroom floor and projected in a Monday review, and a
-  half-tuned dark mode would cost more than it earns.
+  Every colour is a semantic role, so the two themes differ only in the values
+  below — no component names a hex, and no component branches on the theme.
 
-  Chart colours are the validated defaults from the data-viz palette
-  (validate_palette.js, light mode): categorical blue #2a78d6 + orange #eb6834
-  clears every gate (CVD ΔE 24.7, normal-vision ΔE 33.6). Status colours are the
-  reserved four and are never used to identify a series.
+  Chart colours are validated with the data-viz palette checker, not eyeballed:
+    light  surface #ffffff — blue #2a78d6 + orange #eb6834
+           (CVD ΔE 24.7, normal-vision ΔE 33.6, both clear 3:1)
+    dark   surface #161a21 — blue #3987e5 + orange #d95926
+           (CVD ΔE 26.8, normal-vision ΔE 31.8, both clear 3:1)
+
+  Dark is a *selected* set of steps for the dark surface, not an inverted light
+  palette. Every text token clears 4.5:1 against its own surface in both modes.
+  Status hues stay reserved and are never used to identify a series.
 */
 
 @theme {
@@ -52,6 +56,90 @@
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   --radius-card: 12px;
+
+  /* Elevation reads as a shadow on light and as a lifted surface on dark. */
+  --shadow-raised: 0 1px 2px rgba(16, 22, 31, 0.08);
+}
+
+/*
+  Dark theme.
+
+  Declared under both scopes: the media query follows the OS setting, and the
+  [data-theme] scope follows the in-app toggle, which must win in both
+  directions. The :not() guard lets an explicit "light" choice beat OS dark.
+*/
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --color-canvas: #0e1116;
+    --color-surface: #161a21;
+    --color-surface-sunken: #1c212a;
+    --color-line: #262c37;
+    --color-line-strong: #38404d;
+
+    --color-ink: #e8ecf2;
+    --color-ink-2: #a3adbd;
+    --color-ink-3: #7a8598;
+
+    --color-brand: #3987e5;
+    --color-brand-strong: #6da7ec;
+    --color-brand-tint: #172a41;
+
+    --color-series-1: #3987e5;
+    --color-series-2: #d95926;
+    --color-series-3: #199e70;
+
+    --color-critical: #f0736f;
+    --color-critical-tint: #2c1a1d;
+    --color-warning: #e0a53a;
+    --color-warning-mark: #fab219;
+    --color-warning-tint: #2a2316;
+    --color-good: #4ec66b;
+    --color-good-tint: #142619;
+
+    --color-mark-muted: #2a313c;
+
+    --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-canvas: #0e1116;
+  --color-surface: #161a21;
+  --color-surface-sunken: #1c212a;
+  --color-line: #262c37;
+  --color-line-strong: #38404d;
+
+  --color-ink: #e8ecf2;
+  --color-ink-2: #a3adbd;
+  --color-ink-3: #7a8598;
+
+  --color-brand: #3987e5;
+  --color-brand-strong: #6da7ec;
+  --color-brand-tint: #172a41;
+
+  --color-series-1: #3987e5;
+  --color-series-2: #d95926;
+  --color-series-3: #199e70;
+
+  --color-critical: #f0736f;
+  --color-critical-tint: #2c1a1d;
+  --color-warning: #e0a53a;
+  --color-warning-mark: #fab219;
+  --color-warning-tint: #2a2316;
+  --color-good: #4ec66b;
+  --color-good-tint: #142619;
+
+  --color-mark-muted: #2a313c;
+
+  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+:root {
+  color-scheme: light;
 }
 
 html {

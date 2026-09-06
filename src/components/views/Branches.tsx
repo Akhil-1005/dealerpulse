@@ -89,7 +89,7 @@ export function Branches() {
               className={clsx(
                 'rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none',
                 scope === option
-                  ? 'bg-surface text-ink shadow-[0_1px_2px_rgba(16,22,31,0.08)]'
+                  ? 'bg-surface text-ink shadow-raised'
                   : 'text-ink-2 hover:text-ink',
               )}
             >

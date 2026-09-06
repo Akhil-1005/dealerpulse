@@ -13,8 +13,9 @@ const ROUTES = [
   ['pipeline', '/pipeline'],
 ];
 const VIEWPORTS = [
-  ['desktop', 1440, 900],
-  ['tablet', 834, 1112],
+  ['desktop', 1440, 900, 'light'],
+  ['tablet', 834, 1112, 'light'],
+  ['dark', 1440, 900, 'dark'],
 ];
 
 mkdirSync(OUT, { recursive: true });
@@ -22,10 +23,11 @@ mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch();
 const errors = [];
 
-for (const [vpName, width, height] of VIEWPORTS) {
+for (const [vpName, width, height, colorScheme] of VIEWPORTS) {
   const context = await browser.newContext({
     viewport: { width, height },
     deviceScaleFactor: 1,
+    colorScheme,
   });
   const page = await context.newPage();
   page.on('console', (m) => {
@@ -42,7 +44,7 @@ for (const [vpName, width, height] of VIEWPORTS) {
     await page.waitForTimeout(500);
     await page.screenshot({
       path: `${OUT}/${name}-${vpName}.png`,
-      fullPage: vpName === 'desktop',
+      fullPage: vpName !== 'tablet',
     });
     console.log(`${name.padEnd(12)} ${vpName.padEnd(8)} content in ${painted}ms`);
   }

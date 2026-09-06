@@ -98,7 +98,9 @@ through.
 - No authentication, per the brief — the viewer is assumed to be the CEO.
 - Data is processed in the browser; at 510 leads this makes filtering instant.
   The tradeoff is discussed in `DECISIONS.md`.
-- Light theme only, deliberately: a daytime operations tool, and a half-tuned
-  dark mode costs more than it earns.
+- Light and dark themes, with a System option that follows the OS. Dark is a
+  selected set of steps validated against the dark surface, not an inverted
+  light palette; the choice persists and is applied before first paint, so
+  there is no white flash.
 - Charts follow a validated palette, avoid dual axes entirely, and each has a
   table view so no value is reachable only by hovering.

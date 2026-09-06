@@ -158,6 +158,27 @@ than eyeballed.
 Bar mount animation is off — bars re-mount on every filter change, and replaying
 a grow-in each time reads as flicker, not polish.
 
+### Dark mode is a second validated palette, not an inversion
+
+Every colour in the app is a semantic role (`--color-ink`, `--color-surface`,
+`--color-critical`), so the two themes differ only in token values and no
+component branches on the theme. Dark steps were chosen for the dark surface and
+run through the same validator: blue `#3987e5` + orange `#d95926` on `#161a21`
+clears CVD ΔE 26.8 and normal-vision ΔE 31.8, and every text token clears 4.5:1
+against its own surface.
+
+Two details that separate a real implementation from a bolted-on one. The
+toggle's **System** setting removes the `data-theme` attribute rather than
+resolving it to a value, so the page keeps following the OS if the user changes
+it with the tab open. And the stored choice is applied by a tiny inline script
+in `<head>`, before React loads, because the bundle arrives far too late to stop
+a white flash.
+
+The one place the light palette is not simply darkened is the critical red. On
+the light surface it is `#d03b3b`; on dark it lifts to `#f0736f` (3.6:1 → 6.1:1).
+Saturated fills belong on small marks, not on large blocks, and a large dark-red
+bar on a dark ground is the exact failure that rule exists to prevent.
+
 ### A verification harness instead of trusting the aggregates
 
 `npm run verify` asserts 60 figures against values derived independently from

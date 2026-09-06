@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import './globals.css';
 import { AppShell } from '@/components/AppShell';
 import { FilterProvider } from '@/components/FilterProvider';
+import { themeInitScript } from '@/components/ThemeToggle';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -26,7 +27,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#f6f7f9',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f6f7f9' },
+    { media: '(prefers-color-scheme: dark)', color: '#0e1116' },
+  ],
 };
 
 /**
@@ -94,7 +98,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Applies the stored theme before first paint — no white flash. */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {/* useSearchParams needs a Suspense boundary above it in Next 15. */}
         <Suspense fallback={<ShellFallback />}>

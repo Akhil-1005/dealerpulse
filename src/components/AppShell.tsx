@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import { AS_OF } from '@/lib/data';
 import { formatDate, formatMonth } from '@/lib/format';
 import { RANGE_PRESETS, useFilter } from './FilterProvider';
+import { ThemeToggle } from './ThemeToggle';
 import { months } from '@/lib/data';
 
 const NAV = [
@@ -69,7 +70,7 @@ function RangeBar() {
             className={clsx(
               'rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none',
               activePresetId === preset.id
-                ? 'bg-surface text-ink shadow-[0_1px_2px_rgba(16,22,31,0.08)]'
+                ? 'bg-surface text-ink shadow-raised'
                 : 'text-ink-2 hover:text-ink',
             )}
           >
@@ -154,9 +155,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               </nav>
             </div>
 
-            <p className="hidden text-[12px] text-ink-3 lg:block">
-              Data as of {formatDate(AS_OF)}
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="hidden text-[12px] text-ink-3 lg:block">
+                Data as of {formatDate(AS_OF)}
+              </p>
+              <ThemeToggle />
+            </div>
           </div>
 
           {/* Tablet/mobile nav drops to its own scrollable row. */}
