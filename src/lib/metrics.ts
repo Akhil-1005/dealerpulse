@@ -92,6 +92,62 @@ export const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
 const ratio = (a: number, b: number) => (b === 0 ? 0 : a / b);
 
 // ---------------------------------------------------------------------------
+// Cohort maturity
+// ---------------------------------------------------------------------------
+
+/**
+ * Company-wide median lead-to-delivery time across all history — the yardstick
+ * for whether a reporting window has had time to convert. Computed once.
+ */
+const COMPANY_CYCLE_DAYS = median(
+  leads
+    .filter((l) => l.isWon)
+    .map((l) => (l.lastActivityAt - l.createdAt) / 86_400_000),
+);
+
+export interface CohortMaturity {
+  /** Median days this window's leads have had to convert, as of AS_OF. */
+  medianDaysAvailable: number;
+  /** Company-wide median lead-to-delivery time. */
+  benchmarkCycleDays: number;
+  /** Leads created in the window — 0 means there is nothing to judge. */
+  size: number;
+  /** False when conversion for this window cannot yet mean anything. */
+  isMature: boolean;
+}
+
+/**
+ * Whether a time window's lead cohort has had long enough to convert.
+ *
+ * Conversion is a cohort metric, so a window ending at the edge of the export
+ * measures leads that have had days rather than months to reach delivery. The
+ * December cohort converts at 1.3% for exactly that reason — not because the
+ * branches collapsed. Reporting that as branch failure fires criticals at
+ * healthy branches and buries the one that is genuinely broken, so every
+ * judgement resting on conversion is gated on this.
+ *
+ * Early-funnel metrics are deliberately *not* gated: first contact happens in a
+ * median of under two days, so contact rate is fully mature in any window and
+ * the leak diagnosis built on it stays trustworthy.
+ *
+ * Maturity is a property of the window, never of the branch, so org filters are
+ * dropped before measuring.
+ */
+export function cohortMaturity(f: Filter): CohortMaturity {
+  const cohort = leadCohort({ ...f, branchId: null, repId: null });
+  const medianDaysAvailable = median(
+    cohort.map((l) => (AS_OF - l.createdAt) / 86_400_000),
+  );
+
+  return {
+    medianDaysAvailable,
+    benchmarkCycleDays: COMPANY_CYCLE_DAYS,
+    size: cohort.length,
+    isMature: cohort.length === 0 || medianDaysAvailable >= COMPANY_CYCLE_DAYS,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Headline KPIs
 // ---------------------------------------------------------------------------
 

@@ -15,6 +15,7 @@ import {
   IconBranches,
   IconCheck,
   IconFunnel,
+  IconInfo,
   IconPipeline,
   IconQueue,
   IconSource,
@@ -29,6 +30,7 @@ import {
   CardHeader,
   DrillLink,
   MiniBar,
+  Notice,
   SectionTitle,
   StatCard,
   Table,
@@ -45,6 +47,7 @@ import {
 } from '@/lib/format';
 import {
   branchScorecards,
+  cohortMaturity,
   computeFunnel,
   computeKpis,
   computeSources,
@@ -71,13 +74,17 @@ export function Overview() {
     const scorecards = branchScorecards(filter);
 
     // The branch furthest below the group — the one the chart calls out.
+    // Suppressed on an immature window, where every branch reads near zero and
+    // the callout would point at whichever healthy branch happened to sort first.
+    const maturity = cohortMaturity(filter);
     const active = scorecards.filter((s) => s.leads >= 15);
     const groupConversion =
       cohort.length > 0 ? cohort.filter((l) => l.isWon).length / cohort.length : 0;
-    const struggling =
-      active
-        .filter((s) => s.conversionRate < groupConversion * 0.6)
-        .sort((a, b) => a.conversionRate - b.conversionRate)[0] ?? null;
+    const struggling = !maturity.isMature
+      ? null
+      : (active
+          .filter((s) => s.conversionRate < groupConversion * 0.6)
+          .sort((a, b) => a.conversionRate - b.conversionRate)[0] ?? null);
 
     const leak = worstRelativeLeak(funnel, funnel);
 
@@ -94,10 +101,12 @@ export function Overview() {
       trend: computeTrend(filter),
       sources: computeSources(cohort),
       narrative: buildNarrative(filter),
+      maturity,
     };
   }, [from, to]);
 
-  const { kpis, prevKpis, narrative, alerts, scorecards, struggling } = model;
+  const { kpis, prevKpis, narrative, alerts, scorecards, struggling, maturity } =
+    model;
 
   const delta = (current: number, previousValue: number | undefined) =>
     prevKpis && previousValue !== undefined && previousValue > 0
@@ -138,7 +147,28 @@ export function Overview() {
           ))}
         </ul>
 
-        {bestMonth && (
+        {!maturity.isMature && (
+          <div className="mt-6">
+            <Notice
+              title="Why conversion reads near zero in this window"
+              icon={<IconInfo className="size-3.5" />}
+            >
+              Leads created here have had a median of{' '}
+              {formatDays(maturity.medianDaysAvailable)} to close, against a
+              company median of {formatDays(maturity.benchmarkCycleDays)} from
+              first enquiry to delivery — so most of this cohort is still in
+              flight rather than lost. Deliveries, revenue and everything in the action
+              queue are complete and unaffected; branch-conversion comparisons
+              and their alerts are held back until the cohort has had time.
+              Widen the range to judge closing performance.
+            </Notice>
+          </div>
+        )}
+
+        {/* Deliveries are a bookings-lens fact and stay valid on an immature
+            window; what makes this banner pointless is a single-month range,
+            where "best month" restates the only month there is. */}
+        {bestMonth && model.trend.length > 1 && (
           <div className="mt-6">
             <Banner icon={<IconTrendUp className="size-4" />}>
               Best month in the period: {formatMonth(bestMonth.month)} delivered{' '}
@@ -233,7 +263,9 @@ export function Overview() {
             subtitle={
               struggling
                 ? `${struggling.name} is highlighted because it converts below two-thirds of the group rate.`
-                : 'All five branches are converting within a normal band.'
+                : maturity.isMature
+                  ? 'All five branches are converting within a normal band.'
+                  : `This cohort has had a median of ${formatDays(maturity.medianDaysAvailable)} to close, so these bars measure elapsed time more than closing skill. No branch is singled out.`
             }
           />
           <BranchComparisonChart
@@ -357,7 +389,9 @@ export function Overview() {
             }))}
             valueFormat={(v) => formatPct(v, 1)}
           />
-          {model.sources.length > 1 && (
+          {/* Same cohort caveat: on an immature window every source reads near
+              zero, and "spend less here" would be advice about elapsed time. */}
+          {model.sources.length > 1 && maturity.isMature && (
             <p className="mt-4 border-t border-line pt-4 text-[13px] leading-relaxed text-ink-2">
               {SOURCE_LABELS[model.sources[0].source]} converts at{' '}
               {formatPct(model.sources[0].conversionRate, 1)} against{' '}

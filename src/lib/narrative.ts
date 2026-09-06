@@ -14,6 +14,7 @@ import { computeForecast } from './forecast';
 import { formatINR, formatMonth, formatNumber, formatPct } from './format';
 import {
   branchScorecards,
+  cohortMaturity,
   computeKpis,
   computeTrend,
   monthsInRange,
@@ -73,7 +74,22 @@ export function buildNarrative(f: Filter): Narrative {
     `${formatINR(kpis.revenue)}${direction}.`;
 
   // --- the spread between branches ----------------------------------------
-  if (scorecards.length > 1) {
+  // Only when the cohort has had time to close. On a window ending at the edge
+  // of the export every branch reads near zero, and reporting that as a spread
+  // ("0.0% to 5.3%") describes elapsed time while sounding like performance.
+  const maturity = cohortMaturity(f);
+
+  if (!maturity.isMature) {
+    points.push(
+      `Conversion for this window is not readable yet: these leads have had a ` +
+        `median of ${formatNumber(maturity.medianDaysAvailable)} days to close ` +
+        `against a ${formatNumber(maturity.benchmarkCycleDays)}-day company ` +
+        `median from enquiry to delivery, so most of them are still in flight ` +
+        `rather than lost. Deliveries and revenue above are complete; ` +
+        `branch-by-branch closing comparisons are held back until the cohort ` +
+        `has matured.`,
+    );
+  } else if (scorecards.length > 1) {
     const ranked = [...scorecards].sort((a, b) => b.conversionRate - a.conversionRate);
     const best = ranked[0];
     const worst = ranked[ranked.length - 1];

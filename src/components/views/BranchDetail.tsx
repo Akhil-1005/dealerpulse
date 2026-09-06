@@ -34,6 +34,7 @@ import {
   formatPct,
 } from '@/lib/format';
 import {
+  cohortMaturity,
   computeFunnel,
   computeKpis,
   computeLossReasons,
@@ -68,6 +69,7 @@ export function BranchDetail({ branchId }: { branchId: string }) {
       kpis: computeKpis(filter),
       prevKpis: previous ? computeKpis(previous) : null,
       companyKpis: computeKpis(company),
+      maturity: cohortMaturity(filter),
       cohort,
       funnel,
       companyFunnel,
@@ -83,7 +85,7 @@ export function BranchDetail({ branchId }: { branchId: string }) {
   if (!branch) notFound();
   if (!model) return null;
 
-  const { kpis, prevKpis, companyKpis, leak } = model;
+  const { kpis, prevKpis, companyKpis, leak, maturity } = model;
 
   const delta = (current: number, previousValue: number | undefined) =>
     prevKpis && previousValue !== undefined && previousValue > 0
@@ -91,7 +93,10 @@ export function BranchDetail({ branchId }: { branchId: string }) {
       : null;
 
   const maxRevenue = Math.max(...model.reps.map((r) => r.revenue), 1);
-  const behind = kpis.conversionRate < companyKpis.conversionRate;
+  // A red conversion tile is a judgement, so it needs a cohort old enough to
+  // support one. On an immature window it would go red at every branch at once.
+  const behind =
+    maturity.isMature && kpis.conversionRate < companyKpis.conversionRate;
 
   return (
     <div className="space-y-8">
@@ -173,7 +178,7 @@ export function BranchDetail({ branchId }: { branchId: string }) {
             chip="violet"
             label="Conversion"
             value={formatPct(kpis.conversionRate, 1)}
-            tone={behind ? 'critical' : 'good'}
+            tone={!maturity.isMature ? 'neutral' : behind ? 'critical' : 'good'}
             hint={`group ${formatPct(companyKpis.conversionRate, 1)}`}
           />
           <StatCard

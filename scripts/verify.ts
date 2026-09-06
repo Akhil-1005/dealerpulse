@@ -10,6 +10,7 @@ import { computeAlerts } from '../src/lib/alerts';
 import { computeForecast } from '../src/lib/forecast';
 import {
   branchScorecards,
+  cohortMaturity,
   computeFunnel,
   computeKpis,
   computeSources,
@@ -263,6 +264,69 @@ check(
   'branch filter partitions the cohort',
   sum(branches.map((b) => leadCohort({ ...all, branchId: b.id }).length)),
   510,
+);
+
+/*
+  Cohort maturity.
+
+  Conversion is a cohort metric, so a window ending at the edge of the export
+  measures elapsed time as much as closing skill. These assertions pin the gate
+  that keeps the last-month view from firing criticals at healthy branches —
+  the failure mode was three "converting far below the group" alerts on Dec,
+  two of them at branches that are fine over any longer window.
+*/
+console.log('\nCohort maturity');
+const lastMonth: Filter = { ...all, from: '2025-12' };
+const lastThree: Filter = { ...all, from: '2025-10' };
+
+check('company cycle benchmark (days)', Math.round(cohortMaturity(all).benchmarkCycleDays), 38);
+check('full range is mature', cohortMaturity(all).isMature, true);
+check('last month is immature', cohortMaturity(lastMonth).isMature, false);
+check('last three months is mature', cohortMaturity(lastThree).isMature, true);
+check(
+  'maturity ignores branch scope',
+  cohortMaturity({ ...lastMonth, branchId: 'B1' }).isMature,
+  cohortMaturity(lastMonth).isMature,
+);
+
+const criticalsIn = (f: Filter) =>
+  computeAlerts(f).filter((a) => a.severity === 'critical');
+
+check(
+  'no branch-health criticals on an immature window',
+  criticalsIn(lastMonth).filter((a) => a.id.startsWith('branch-health-')).length,
+  0,
+);
+check(
+  'the stuck-order critical still fires there',
+  criticalsIn(lastMonth).some((a) => a.id === 'stuck-deliveries'),
+  true,
+);
+check(
+  'Lakeside is the only branch flagged on every mature window',
+  [all, lastThree, { ...all, from: '2025-07' } as Filter].map((f) =>
+    criticalsIn(f)
+      .filter((a) => a.id.startsWith('branch-health-'))
+      .map((a) => a.branchId)
+      .join(','),
+  ),
+  ['B3', 'B3', 'B3'],
+);
+
+/*
+  The group benchmark on the Branches page must be a single-lens cohort rate.
+  Dividing bookings-lens deliveries by a cohort-lens denominator printed 69.3%
+  for December — a month where cohort conversion was actually 1.3%.
+*/
+check(
+  'group benchmark never exceeds 100%',
+  months.every((m) => computeKpis({ ...all, from: m, to: m }).conversionRate <= 1),
+  true,
+);
+check(
+  'December group benchmark (%)',
+  (computeKpis(lastMonth).conversionRate * 100).toFixed(1),
+  '1.3',
 );
 
 console.log(

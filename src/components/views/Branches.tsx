@@ -8,10 +8,12 @@ import {
   Card,
   DrillLink,
   MiniBar,
+  Notice,
   Table,
   Td,
   Th,
 } from '@/components/ui';
+import { IconInfo } from '@/components/icons';
 import {
   formatDays,
   formatINR,
@@ -20,6 +22,8 @@ import {
 } from '@/lib/format';
 import {
   branchScorecards,
+  cohortMaturity,
+  computeKpis,
   repScorecards,
   type Filter,
   type ScorecardRow,
@@ -50,16 +54,21 @@ export function Branches() {
   const [sort, setSort] = useState<SortKey>('revenue');
   const [scope, setScope] = useState<'branch' | 'rep'>('branch');
 
-  const rows = useMemo(() => {
+  const { rows, companyConversion, maturity } = useMemo(() => {
     const filter: Filter = { from, to, branchId: null, repId: null };
     const data = scope === 'branch' ? branchScorecards(filter) : repScorecards(filter);
-    return [...data].sort((a, b) => b[sort] - a[sort]);
+    return {
+      rows: [...data].sort((a, b) => b[sort] - a[sort]),
+      // Both lenses in one ratio is not a rate at all: `delivered` counts leads
+      // that *landed* in the window while `leads` counts leads *created* in it,
+      // so a month that banks an older cohort can print well above 100%. The
+      // benchmark has to be the same cohort measure the rows are judged on.
+      companyConversion: computeKpis(filter).conversionRate,
+      maturity: cohortMaturity(filter),
+    };
   }, [from, to, sort, scope]);
 
   const maxRevenue = Math.max(...rows.map((r) => r.revenue), 1);
-  const companyConversion =
-    rows.reduce((acc, r) => acc + r.delivered, 0) /
-    Math.max(rows.reduce((acc, r) => acc + r.leads, 0), 1);
 
   return (
     <div className="space-y-6">
@@ -102,6 +111,18 @@ export function Branches() {
         </p>
       </div>
 
+      {!maturity.isMature && (
+        <Notice title="Conversion is not readable yet in this window" icon={<IconInfo className="size-3.5" />}>
+          Leads created here have had a median of{' '}
+          {formatDays(maturity.medianDaysAvailable)} to close, against a company
+          median of {formatDays(maturity.benchmarkCycleDays)} from first enquiry
+          to delivery. Most of them simply have not had time yet, so the
+          conversion column runs near zero everywhere and no branch is marked as
+          lagging. Leads, contact rate, revenue and at-risk value are unaffected —
+          widen the range to compare closing performance.
+        </Notice>
+      )}
+
       <Card padded={false}>
         <Table>
           <thead>
@@ -126,8 +147,13 @@ export function Branches() {
           </thead>
           <tbody>
             {rows.map((row) => {
+              // Never mark a branch down on a cohort that has not had time to
+              // close — on the last-month window that flags healthy branches
+              // and hides the one genuinely in trouble.
               const lagging =
-                row.leads >= 15 && row.conversionRate < companyConversion * 0.6;
+                maturity.isMature &&
+                row.leads >= 15 &&
+                row.conversionRate < companyConversion * 0.6;
               return (
                 <tr key={row.id} className="hover:bg-surface-sunken">
                   <Td>

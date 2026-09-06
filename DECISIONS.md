@@ -98,6 +98,55 @@ So there are two, and each metric uses the honest one:
 fact about right now, not about the reporting window. Branch scope still
 applies, so a manager sees only their own queue.
 
+### A cohort that has not aged cannot be judged, so the dashboard says so
+
+The two-lens split above has a consequence that took a live read of the
+"Last month" view to see properly. Conversion is a cohort metric: it asks what
+share of the leads *created* in a window went on to deliver. On a window ending
+at the edge of the export, those leads have had days rather than months to get
+there — the December cohort has had a median of **13 days** against a **38-day**
+company median from enquiry to delivery.
+
+So December converts at 1.3%, and the first build reported that as a business
+collapse. Three branches drew a red *converting far below the group* critical;
+two of them — Central and Eastside — run above 41% over any longer window and
+are entirely healthy. The one branch genuinely in trouble was sitting in that
+list indistinguishable from two false alarms, which is the exact failure the
+alert rules were written to avoid.
+
+The fix is a single gate, `cohortMaturity()` in `src/lib/metrics.ts`. A window
+is mature when the median lead in it has had at least the company median cycle
+to close. Everything that rests on conversion is gated on it: the branch-health
+alert, the overview's struggling-branch callout, the lagging badges, the
+comparison chart's subtitle, the source-mix recommendation, and the narrative.
+Where the gate is closed the dashboard states the reason in the CEO's own terms
+rather than going quiet, because an unexplained gap invites the reader to assume
+the worse of the two possible stories.
+
+Two details matter more than the rule itself:
+
+**Only the immature metrics are held back.** Deliveries, revenue, the pipeline
+forecast and the entire action queue are unaffected and stay on screen — they
+are bookings-lens or point-in-time facts and are complete for any window. The
+funnel's early steps are not gated either: first contact happens in a median of
+under two days, so contact rate is fully mature even in a one-month window, and
+the leak diagnosis built on it stays trustworthy. Gating the whole page would
+have been easier and would have thrown away most of what was still true.
+
+**Maturity is a property of the window, never of the branch.** Measuring it
+per branch would let a branch with slow leads declare itself unmeasurable, which
+is precisely the excuse a dashboard should not offer. Org filters are dropped
+before the maturity check runs.
+
+The same lens confusion had produced a second bug on the Branches page, where
+the group benchmark divided bookings-lens deliveries by a cohort-lens
+denominator. That is not a rate at all — it printed **69.3%** for a month whose
+real cohort conversion was 1.3%, and it can exceed 100% whenever a month banks
+an older cohort. Both the gate and the single-lens benchmark are now pinned by
+assertions in the harness, including one that the stuck-order critical still
+fires on an immature window and one that Lakeside is the *only* branch flagged
+across every mature range.
+
 ### Per-stage staleness thresholds, not one flat number
 
 The brief's example ("not contacted in 7+ days") is right in spirit but wrong as
@@ -241,7 +290,7 @@ never repaints anyone.
 
 ### A verification harness instead of trusting the aggregates
 
-`npm run verify` asserts 65 figures against values derived independently from
+`npm run verify` asserts 75 figures against values derived independently from
 the raw JSON — totals, funnel counts, branch splits, the forecast bounds, alert
 behaviour, and invariants like "branch numbers sum to the company total". It
 caught a real bug: comparing a funnel against itself reported a leak of ~1e-14

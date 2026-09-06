@@ -574,6 +574,42 @@ export function Banner({
   );
 }
 
+/**
+ * An explanatory caveat — why a number on this page should not be read the
+ * usual way.
+ *
+ * Deliberately neither gold nor orange. Gold is reserved for interactive fills
+ * and orange for "watch" severity, and this is neither: it is not something to
+ * act on and not something clickable, so borrowing either hue would weaken a
+ * signal that has to stay sharp elsewhere. A recessed slab with a strong left
+ * rule reads as an aside at a glance.
+ */
+export function Notice({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-line border-l-[3px] border-l-line-strong bg-surface-sunken px-4 py-3">
+      <p className="flex items-center gap-2 text-[12.5px] font-semibold text-ink">
+        {icon && (
+          <span aria-hidden className="text-ink-3">
+            {icon}
+          </span>
+        )}
+        {title}
+      </p>
+      <p className="mt-1 max-w-4xl text-[12.5px] leading-[1.6] text-ink-2">
+        {children}
+      </p>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Segmented control
 // ---------------------------------------------------------------------------

@@ -13,6 +13,7 @@ import { branches, leads } from './data';
 import { formatDays, formatINR, formatPct } from './format';
 import {
   worstRelativeLeak,
+  cohortMaturity,
   computeFunnel,
   isStale,
   leadCohort,
@@ -133,6 +134,12 @@ function coldLeads(f: Filter): Alert[] {
 // ---------------------------------------------------------------------------
 
 function branchHealth(f: Filter): Alert[] {
+  // Conversion needs a cohort that has had time to convert. On a window ending
+  // at the edge of the export nearly every branch reads near zero, which fires
+  // criticals at healthy branches and buries the one that is genuinely broken —
+  // precisely the untrustworthy alert list these rules exist to avoid.
+  if (!cohortMaturity(f).isMature) return [];
+
   const company = leadCohort({ ...f, branchId: null, repId: null });
   if (company.length < 20) return [];
 
