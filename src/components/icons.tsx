@@ -141,6 +141,14 @@ export const IconSource = (p: IconProps) => (
   </Icon>
 );
 
+export const IconCalendar = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="2.2" y="3.2" width="11.6" height="10.4" rx="1.6" />
+    <path d="M2.2 6.4h11.6" />
+    <path d="M5.4 1.9v2.4M10.6 1.9v2.4" />
+  </Icon>
+);
+
 export const IconUser = (p: IconProps) => (
   <Icon {...p}>
     <circle cx="8" cy="5.6" r="2.6" />

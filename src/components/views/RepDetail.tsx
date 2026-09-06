@@ -11,11 +11,17 @@ import {
   CardHeader,
   DrillLink,
   EmptyState,
-  Stat,
+  StatCard,
   Table,
   Td,
   Th,
 } from '@/components/ui';
+import {
+  IconCheck,
+  IconFunnel,
+  IconPipeline,
+  IconUser,
+} from '@/components/icons';
 import { getRep } from '@/lib/data';
 import {
   formatDate,
@@ -117,32 +123,43 @@ export function RepDetail({ repId }: { repId: string }) {
         </p>
       </header>
 
-      <Card>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-7 sm:grid-cols-3 xl:grid-cols-5">
-          <Stat
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
+          <StatCard
+            icon={<IconUser />}
+            chip="blue"
             label="Leads assigned"
             value={formatNumber(kpis.newLeads)}
             delta={delta(kpis.newLeads, prevKpis?.newLeads)}
           />
-          <Stat
+          <StatCard
+            icon={<IconCheck />}
+            chip="mint"
             label="Delivered"
             value={formatNumber(kpis.deliveredUnits)}
             delta={delta(kpis.deliveredUnits, prevKpis?.deliveredUnits)}
           />
-          <Stat label="Revenue" value={formatINR(kpis.revenue)} />
-          <Stat
+          <StatCard
+            label="Revenue"
+            value={formatINR(kpis.revenue)}
+            icon={<span className="text-[15px] font-bold">₹</span>}
+            chip="gold"
+          />
+          <StatCard
+            icon={<IconFunnel />}
+            chip="violet"
             label="Conversion"
             value={formatPct(kpis.conversionRate, 1)}
             tone={ahead ? 'good' : 'critical'}
             hint={`branch ${formatPct(branchKpis.conversionRate, 1)}`}
           />
-          <Stat
+          <StatCard
             label="Open book"
             value={formatINR(kpis.openPipelineValue)}
             hint={`${formatNumber(kpis.openLeadCount)} live leads`}
+            icon={<IconPipeline />}
+            chip="blue"
           />
-        </div>
-      </Card>
+      </div>
 
       <div className="grid items-start gap-6 xl:grid-cols-2">
         <Card>

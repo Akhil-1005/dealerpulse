@@ -104,3 +104,7 @@ through.
   there is no white flash.
 - Charts follow a validated palette, avoid dual axes entirely, and each has a
   table view so no value is reachable only by hovering.
+- Two accents with a strict division of labour: gold is for interactive fills
+  only (it measures 2.25:1 on white and cannot legally set type), blue is for
+  charts and focus, and the reserved status hues are never borrowed for either.
+  See `DECISIONS.md`.

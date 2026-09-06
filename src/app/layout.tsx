@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Instrument_Sans, JetBrains_Mono } from 'next/font/google';
+import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import { Suspense } from 'react';
 import './globals.css';
 import { AppShell } from '@/components/AppShell';
@@ -7,16 +7,16 @@ import { FilterProvider } from '@/components/FilterProvider';
 import { themeInitScript } from '@/components/ThemeToggle';
 
 /*
-  Instrument Sans — a modern grotesque with noticeably more character than the
-  default UI sans, while staying tight and legible at the 11–13px this dashboard
-  lives at. One family throughout: the hero figures use the same sans as
-  everything else, since a display face on a headline number reads as
+  Plus Jakarta Sans — geometric, large x-height, friendly. It runs wider than a
+  neutral grotesque, so table type is set a touch smaller and tracking is tuned
+  per level in globals.css. One family throughout: the hero figures use the same
+  sans as everything else, since a display face on a headline number reads as
   decoration rather than data.
 */
-const sans = Instrument_Sans({
+const sans = Plus_Jakarta_Sans({
   variable: '--font-sans-family',
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
 });
 

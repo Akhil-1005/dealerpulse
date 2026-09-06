@@ -80,6 +80,46 @@ export function CardHeader({
  * shows only "today" hides whether today is a recovery or the start of a
  * slide, and the trend data is already computed for the charts below.
  */
+export type ChipColor = 'blue' | 'violet' | 'mint' | 'gold' | 'rose';
+
+const CHIP_CLASS: Record<ChipColor, string> = {
+  blue: 'bg-chip-blue text-chip-blue-ink',
+  violet: 'bg-chip-violet text-chip-violet-ink',
+  mint: 'bg-chip-mint text-chip-mint-ink',
+  gold: 'bg-chip-gold text-chip-gold-ink',
+  rose: 'bg-chip-rose text-chip-rose-ink',
+};
+
+/**
+ * A pastel glyph tile.
+ *
+ * Purely decorative identity — it makes a row of otherwise identical stat cards
+ * scannable. Colour here carries no value, which is exactly why these hues stay
+ * out of the charts, where it would have to.
+ */
+export function IconChip({
+  icon,
+  color = 'blue',
+  size = 'md',
+}: {
+  icon: ReactNode;
+  color?: ChipColor;
+  size?: 'sm' | 'md';
+}) {
+  return (
+    <span
+      aria-hidden
+      className={clsx(
+        'grid shrink-0 place-items-center rounded-xl',
+        size === 'md' ? 'size-9' : 'size-7 rounded-lg',
+        CHIP_CLASS[color],
+      )}
+    >
+      {icon}
+    </span>
+  );
+}
+
 export function Stat({
   label,
   value,
@@ -88,6 +128,8 @@ export function Stat({
   tone = 'neutral',
   series,
   invertDelta = false,
+  icon,
+  chip = 'blue',
 }: {
   label: string;
   value: string;
@@ -97,6 +139,8 @@ export function Stat({
   tone?: 'neutral' | 'good' | 'warning' | 'critical';
   series?: number[];
   invertDelta?: boolean;
+  icon?: ReactNode;
+  chip?: ChipColor;
 }) {
   const toneClass = {
     neutral: 'text-ink',
@@ -106,34 +150,53 @@ export function Stat({
   }[tone];
 
   return (
-    <div className="flex flex-col gap-1.5">
-      {/* The sparkline rides beside the label, never beside the value — sharing
-          a row with the figure squeezes it into a wrap at narrow columns. */}
-      <div className="flex items-center justify-between gap-2">
-        <span className="truncate text-[11px] font-medium tracking-[0.055em] text-ink-3 uppercase">
-          {label}
-        </span>
-        {series && series.length > 1 && <Sparkline values={series} />}
-      </div>
-
-      {/* Proportional figures, not tabular — equal-width digits read loose at
-          display sizes. Negative tracking keeps large numbers from sprawling. */}
-      <span
-        className={clsx(
-          'text-[27px] leading-none font-semibold tracking-[-0.022em] whitespace-nowrap',
-          toneClass,
-        )}
-      >
-        {value}
-      </span>
-
-      <span className="flex min-h-[18px] items-center gap-2 text-[12px] text-ink-3">
+    <div className="flex h-full flex-col">
+      {/* Glyph left, movement right — the two things you read before the
+          number itself. The value then gets a full line, so a long figure like
+          "₹38.88 Cr" can never wrap. */}
+      <div className="mb-3.5 flex items-start justify-between gap-2">
+        {icon ? <IconChip icon={icon} color={chip} /> : <span />}
         {delta !== undefined && delta !== null && (
           <DeltaChip value={delta} invert={invertDelta} />
         )}
-        {hint && <span className="truncate">{hint}</span>}
-      </span>
+      </div>
+
+      <div className="flex flex-1 flex-col">
+        {/* Proportional figures, not tabular — equal-width digits read loose at
+            display sizes. Tight tracking keeps large numbers from sprawling. */}
+        <span
+          className={clsx(
+            'block text-[26px] leading-none font-bold tracking-[-0.028em] whitespace-nowrap',
+            toneClass,
+          )}
+        >
+          {value}
+        </span>
+        <span className="mt-2 block text-[12.5px] font-medium text-ink-2">
+          {label}
+        </span>
+        <span className="mt-1 block min-h-[18px] truncate text-[12px] text-ink-3">
+          {hint}
+        </span>
+
+        {/* The trend runs full width along the foot of the tile, so it reads as
+            a base line under the figure rather than competing with it. */}
+        {series && series.length > 1 && (
+          <span className="mt-auto block pt-4">
+            <Sparkline values={series} stretch width={120} height={22} />
+          </span>
+        )}
+      </div>
     </div>
+  );
+}
+
+/** A stat in its own card — the row shape used across the dashboard. */
+export function StatCard(props: React.ComponentProps<typeof Stat>) {
+  return (
+    <Card className="p-4 sm:p-5">
+      <Stat {...props} />
+    </Card>
   );
 }
 
@@ -146,11 +209,18 @@ export function Sparkline({
   className,
   width = 46,
   height = 14,
+  stretch = false,
 }: {
   values: number[];
   className?: string;
   width?: number;
   height?: number;
+  /**
+   * Fill the available width. The viewBox is then scaled non-uniformly, so the
+   * stroke is pinned with `non-scaling-stroke` and the end dot is dropped —
+   * a circle under a non-uniform scale would render as an ellipse.
+   */
+  stretch?: boolean;
 }) {
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -173,11 +243,12 @@ export function Sparkline({
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
-      width={width}
+      width={stretch ? undefined : width}
       height={height}
       fill="none"
       aria-hidden
-      className={clsx('shrink-0 overflow-visible', className)}
+      preserveAspectRatio={stretch ? 'none' : 'xMidYMid meet'}
+      className={clsx(stretch ? 'w-full' : 'shrink-0 overflow-visible', className)}
     >
       <path
         d={d}
@@ -185,15 +256,18 @@ export function Sparkline({
         strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"
+        vectorEffect={stretch ? 'non-scaling-stroke' : undefined}
       />
-      <circle
-        cx={last[0]}
-        cy={last[1]}
-        r={2}
-        fill={rising ? 'var(--color-brand)' : 'var(--color-ink-3)'}
-        stroke="var(--color-surface)"
-        strokeWidth={1.5}
-      />
+      {!stretch && (
+        <circle
+          cx={last[0]}
+          cy={last[1]}
+          r={2}
+          fill={rising ? 'var(--color-brand)' : 'var(--color-ink-3)'}
+          stroke="var(--color-surface)"
+          strokeWidth={1.5}
+        />
+      )}
     </svg>
   );
 }
@@ -386,15 +460,172 @@ export function Td({
   );
 }
 
+
+// ---------------------------------------------------------------------------
+// Avatar
+// ---------------------------------------------------------------------------
+
+const AVATAR_CLASS = [
+  'bg-chip-blue-ink',
+  'bg-chip-gold-ink',
+  'bg-chip-mint-ink',
+  'bg-chip-violet-ink',
+  'bg-chip-rose-ink',
+];
+
+/**
+ * Initials on a coloured disc.
+ *
+ * The hue is derived from the id, not from the row position, so a rep keeps the
+ * same colour wherever they appear and re-sorting a table never repaints
+ * anyone. Decorative identity only — it encodes nothing about performance.
+ */
+export function Avatar({
+  name,
+  id,
+  size = 'md',
+}: {
+  name: string;
+  id: string;
+  size?: 'sm' | 'md';
+}) {
+  const initials = name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+
+  return (
+    <span
+      aria-hidden
+      className={clsx(
+        'grid shrink-0 place-items-center rounded-full font-semibold text-white',
+        size === 'md' ? 'size-8 text-[11px]' : 'size-7 text-[10px]',
+        AVATAR_CLASS[hash % AVATAR_CLASS.length],
+      )}
+    >
+      {initials}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Button
+// ---------------------------------------------------------------------------
+
+/**
+ * The accent gold is a *fill* colour and nothing else — at 2.3:1 on white it
+ * cannot legally set type, so the primary button pairs it with near-black ink
+ * (8.05:1) rather than the white text these palettes usually invite.
+ */
+export function Button({
+  children,
+  onClick,
+  variant = 'secondary',
+  disabled,
+  icon,
+  type = 'button',
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  variant?: 'primary' | 'secondary';
+  disabled?: boolean;
+  icon?: ReactNode;
+  type?: 'button' | 'submit';
+}) {
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={clsx(
+        'inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[12.5px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45',
+        variant === 'primary'
+          ? 'bg-accent text-ink shadow-raised hover:bg-accent-hover'
+          : 'border border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink',
+      )}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Highlight banner
+// ---------------------------------------------------------------------------
+
+/** A single notable fact, called out on the accent tint. */
+export function Banner({
+  icon,
+  children,
+}: {
+  icon?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-xl border border-accent-line bg-accent-tint px-4 py-2.5">
+      {icon && <span className="text-accent-ink">{icon}</span>}
+      <p className="text-[12.5px] font-medium text-accent-ink">{children}</p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Segmented control
+// ---------------------------------------------------------------------------
+
+export function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+  label,
+}: {
+  options: { value: T; label: string; badge?: ReactNode }[];
+  value: T;
+  onChange: (value: T) => void;
+  label: string;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className="inline-flex items-center gap-1 rounded-xl border border-line bg-surface p-1"
+    >
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => onChange(option.value)}
+          aria-pressed={value === option.value}
+          className={clsx(
+            'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none',
+            value === option.value
+              ? 'bg-ink text-surface'
+              : 'text-ink-3 hover:bg-surface-sunken hover:text-ink',
+          )}
+        >
+          {option.label}
+          {option.badge}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Misc
 // ---------------------------------------------------------------------------
+
 
 export function DrillLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="rounded font-medium text-ink hover:text-brand-strong hover:underline focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+      className="rounded font-semibold text-ink decoration-line-strong underline-offset-[3px] hover:underline focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
     >
       {children}
     </Link>

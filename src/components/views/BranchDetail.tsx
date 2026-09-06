@@ -13,11 +13,18 @@ import {
   DrillLink,
   EmptyState,
   MiniBar,
-  Stat,
+  StatCard,
   Table,
   Td,
   Th,
 } from '@/components/ui';
+import {
+  IconCheck,
+  IconFunnel,
+  IconPipeline,
+  IconQueue,
+  IconUser,
+} from '@/components/icons';
 import { computeAlerts } from '@/lib/alerts';
 import { getBranch } from '@/lib/data';
 import {
@@ -139,41 +146,51 @@ export function BranchDetail({ branchId }: { branchId: string }) {
         </p>
       </header>
 
-      <Card>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-7 sm:grid-cols-3 xl:grid-cols-6">
-          <Stat
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
+          <StatCard
+            icon={<IconUser />}
+            chip="blue"
             label="New leads"
             value={formatNumber(kpis.newLeads)}
             delta={delta(kpis.newLeads, prevKpis?.newLeads)}
           />
-          <Stat
+          <StatCard
+            icon={<IconCheck />}
+            chip="mint"
             label="Delivered"
             value={formatNumber(kpis.deliveredUnits)}
             delta={delta(kpis.deliveredUnits, prevKpis?.deliveredUnits)}
           />
-          <Stat
+          <StatCard
+            icon={<span className="text-[15px] font-bold">₹</span>}
+            chip="gold"
             label="Revenue"
             value={formatINR(kpis.revenue)}
             delta={delta(kpis.revenue, prevKpis?.revenue)}
           />
-          <Stat
+          <StatCard
+            icon={<IconFunnel />}
+            chip="violet"
             label="Conversion"
             value={formatPct(kpis.conversionRate, 1)}
             tone={behind ? 'critical' : 'good'}
             hint={`group ${formatPct(companyKpis.conversionRate, 1)}`}
           />
-          <Stat
+          <StatCard
+            icon={<IconQueue />}
+            chip="rose"
             label="Median cycle"
             value={kpis.medianCycleDays > 0 ? formatDays(kpis.medianCycleDays) : '—'}
             hint={`group ${formatDays(companyKpis.medianCycleDays)}`}
           />
-          <Stat
+          <StatCard
             label="Open pipeline"
             value={formatINR(kpis.openPipelineValue)}
             hint={`${formatNumber(kpis.openLeadCount)} live leads`}
+            icon={<IconPipeline />}
+            chip="blue"
           />
-        </div>
-      </Card>
+      </div>
 
       <section>
         <h2 className="mb-3 text-[13px] font-semibold tracking-wide text-ink-3 uppercase">

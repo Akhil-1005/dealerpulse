@@ -4,14 +4,22 @@ import { useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { useFilter } from '@/components/FilterProvider';
 import {
+  Avatar,
   Badge,
+  Button,
   Card,
   DrillLink,
   EmptyState,
   SectionTitle,
-  Stat,
+  StatCard,
   StatusDot,
 } from '@/components/ui';
+import {
+  IconAlert,
+  IconCalendar,
+  IconDownload,
+  IconQueue,
+} from '@/components/icons';
 import { branches } from '@/lib/data';
 import {
   formatDate,
@@ -127,39 +135,45 @@ export function ActionQueue() {
         </p>
       </header>
 
-      <Card>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-7 sm:grid-cols-4">
-          <Stat
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <StatCard
             label="Leads to chase"
             value={formatNumber(model.all.length)}
             tone={model.all.length > 0 ? 'critical' : 'good'}
+            icon={<IconAlert />}
+            chip="rose"
           />
-          <Stat
+          <StatCard
             label="Value at risk"
             value={formatINR(sum(model.all.map((l) => l.deal_value)))}
+            icon={<span className="text-[15px] font-bold">₹</span>}
+            chip="gold"
           />
-          <Stat
+          <StatCard
             label="Signed, undelivered"
             value={formatINR(sum(model.orders.map((l) => l.deal_value)))}
             hint={`${formatNumber(model.orders.length)} orders`}
+            icon={<IconQueue />}
+            chip="violet"
           />
-          <Stat
+          <StatCard
             label="Longest wait"
             value={
               model.all.length
                 ? formatDays(Math.max(...model.all.map((l) => l.daysSinceActivity)))
                 : '—'
             }
+            icon={<IconCalendar />}
+            chip="blue"
           />
-        </div>
-      </Card>
+      </div>
 
       {/* Lens + branch scope, in one row above the list. */}
       <div className="flex flex-wrap items-center gap-3">
         <div
           role="group"
           aria-label="Queue lens"
-          className="flex flex-wrap items-center gap-1 rounded-lg bg-surface-sunken p-1"
+          className="flex flex-wrap items-center gap-1 rounded-xl border border-line bg-surface p-1"
         >
           {LENSES.map((option) => (
             <button
@@ -168,14 +182,14 @@ export function ActionQueue() {
               onClick={() => setLens(option.id)}
               aria-pressed={lens === option.id}
               className={clsx(
-                'rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none',
+                'rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none',
                 lens === option.id
-                  ? 'bg-surface text-ink shadow-raised'
-                  : 'text-ink-2 hover:text-ink',
+                  ? 'bg-ink text-surface'
+                  : 'text-ink-3 hover:bg-surface-sunken hover:text-ink',
               )}
             >
               {option.label}
-              <span className="nums ml-1.5 text-ink-3">
+              <span className="nums ml-1.5 opacity-60">
                 {option.id === 'orders'
                   ? model.orders.length
                   : option.id === 'cold'
@@ -193,7 +207,7 @@ export function ActionQueue() {
           id="queue-branch"
           value={branchId ?? ''}
           onChange={(e) => setBranch(e.target.value || null)}
-          className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-[12px] font-medium text-ink-2 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+          className="rounded-xl border border-line bg-surface px-3 py-2 text-[12px] font-semibold text-ink-2 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
         >
           <option value="">All branches</option>
           {branches.map((branch) => (
@@ -203,14 +217,16 @@ export function ActionQueue() {
           ))}
         </select>
 
-        <button
-          type="button"
-          onClick={download}
-          disabled={!rows.length}
-          className="ml-auto rounded-md border border-line bg-surface px-3 py-1.5 text-[12px] font-medium text-ink-2 transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
-        >
-          Export CSV
-        </button>
+        <span className="ml-auto">
+          <Button
+            variant="primary"
+            onClick={download}
+            disabled={!rows.length}
+            icon={<IconDownload className="size-3.5" />}
+          >
+            Export CSV
+          </Button>
+        </span>
       </div>
 
       <p className="text-[13px] leading-relaxed text-ink-2">{activeLens.blurb}</p>
@@ -236,6 +252,7 @@ export function ActionQueue() {
                     className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-surface-sunken focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none focus-visible:-outline-offset-2 sm:px-6"
                   >
                     <StatusDot tone={tone} />
+                    <Avatar name={lead.customer_name} id={lead.id} size="sm" />
 
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[14px] font-medium text-ink">

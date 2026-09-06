@@ -13,18 +13,24 @@ import {
 import {
   IconAlert,
   IconBranches,
+  IconCheck,
   IconFunnel,
+  IconPipeline,
+  IconQueue,
   IconSource,
   IconTrendUp,
+  IconUser,
 } from '@/components/icons';
 import {
+  Avatar,
   Badge,
+  Banner,
   Card,
   CardHeader,
   DrillLink,
   MiniBar,
   SectionTitle,
-  Stat,
+  StatCard,
   Table,
   Td,
   Th,
@@ -33,6 +39,7 @@ import { computeAlerts } from '@/lib/alerts';
 import {
   formatDays,
   formatINR,
+  formatMonth,
   formatNumber,
   formatPct,
 } from '@/lib/format';
@@ -98,6 +105,9 @@ export function Overview() {
       : null;
 
   const maxRevenue = Math.max(...scorecards.map((s) => s.revenue), 1);
+  const bestMonth = [...model.trend]
+    .filter((t) => t.delivered > 0)
+    .sort((a, b) => b.delivered - a.delivered)[0];
 
   return (
     <div className="space-y-8">
@@ -127,50 +137,70 @@ export function Overview() {
             </li>
           ))}
         </ul>
+
+        {bestMonth && (
+          <div className="mt-6">
+            <Banner icon={<IconTrendUp className="size-4" />}>
+              Best month in the period: {formatMonth(bestMonth.month)} delivered{' '}
+              {formatNumber(bestMonth.delivered)} vehicles worth{' '}
+              {formatINR(bestMonth.revenue)}.
+            </Banner>
+          </div>
+        )}
       </section>
 
       {/* ---------------------------------------------------------------- */}
       {/* Vital signs                                                       */}
       {/* ---------------------------------------------------------------- */}
-      <Card>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-7 divide-line sm:grid-cols-3 xl:grid-cols-6 xl:gap-x-0 xl:divide-x xl:[&>*]:px-5 xl:[&>*:first-child]:pl-0 xl:[&>*:last-child]:pr-0">
-          <Stat
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
+          <StatCard
             label="New leads"
             value={formatNumber(kpis.newLeads)}
             delta={delta(kpis.newLeads, prevKpis?.newLeads)}
             series={model.trend.map((t) => t.newLeads)}
+            icon={<IconUser />}
+            chip="blue"
           />
-          <Stat
+          <StatCard
             label="Delivered"
             value={formatNumber(kpis.deliveredUnits)}
             delta={delta(kpis.deliveredUnits, prevKpis?.deliveredUnits)}
             hint="units"
             series={model.trend.map((t) => t.delivered)}
+            icon={<IconCheck />}
+            chip="mint"
           />
-          <Stat
+          <StatCard
             label="Revenue"
             value={formatINR(kpis.revenue)}
             delta={delta(kpis.revenue, prevKpis?.revenue)}
             series={model.trend.map((t) => t.revenue)}
+            icon={<span className="text-[15px] font-bold">₹</span>}
+            chip="gold"
           />
-          <Stat
+          <StatCard
             label="Lead → delivery"
             value={formatPct(kpis.conversionRate, 1)}
             delta={delta(kpis.conversionRate, prevKpis?.conversionRate)}
             series={model.trend.map((t) => t.conversionRate)}
+            icon={<IconFunnel />}
+            chip="violet"
           />
-          <Stat
+          <StatCard
             label="Median cycle"
             value={formatDays(kpis.medianCycleDays)}
             hint="lead to delivery"
+            icon={<IconQueue />}
+            chip="rose"
           />
-          <Stat
+          <StatCard
             label="Open pipeline"
             value={formatINR(kpis.openPipelineValue)}
             hint={`${formatNumber(kpis.openLeadCount)} live leads`}
+            icon={<IconPipeline />}
+            chip="blue"
           />
-        </div>
-      </Card>
+      </div>
 
       {/* ---------------------------------------------------------------- */}
       {/* What to do about it                                               */}
@@ -242,10 +272,17 @@ export function Overview() {
               {scorecards.map((row) => (
                 <tr key={row.id} className="hover:bg-surface-sunken">
                   <Td>
-                    <DrillLink href={withRange(`/branches/${row.id}`)}>
-                      {row.name}
-                    </DrillLink>
-                    <span className="block text-[12px] text-ink-3">{row.subtitle}</span>
+                    <div className="flex items-center gap-2.5">
+                      <Avatar name={row.name} id={row.id} size="sm" />
+                      <span className="min-w-0">
+                        <DrillLink href={withRange(`/branches/${row.id}`)}>
+                          {row.name}
+                        </DrillLink>
+                        <span className="block text-[12px] text-ink-3">
+                          {row.subtitle}
+                        </span>
+                      </span>
+                    </div>
                   </Td>
                   <Td align="right" numeric>{formatNumber(row.leads)}</Td>
                   <Td align="right" numeric>{formatNumber(row.delivered)}</Td>

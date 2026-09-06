@@ -10,6 +10,7 @@ import { RANGE_PRESETS, useFilter } from './FilterProvider';
 import { ThemeToggle } from './ThemeToggle';
 import {
   IconBranches,
+  IconCalendar,
   IconOverview,
   IconPipeline,
   IconQueue,
@@ -41,7 +42,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             className={clsx(
               'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none',
               active
-                ? 'bg-brand-tint text-brand-strong'
+                ? 'bg-accent-tint text-accent-ink'
                 : 'text-ink-2 hover:bg-surface-sunken hover:text-ink',
             )}
           >
@@ -66,7 +67,7 @@ function RangeBar() {
       <div
         role="group"
         aria-label="Time range presets"
-        className="flex flex-wrap items-center gap-1 rounded-lg bg-surface-sunken p-1"
+        className="flex flex-wrap items-center gap-1 rounded-xl border border-line bg-surface p-1"
       >
         {RANGE_PRESETS.map((preset) => (
           <button
@@ -75,10 +76,10 @@ function RangeBar() {
             onClick={() => setRange(preset.from, preset.to)}
             aria-pressed={activePresetId === preset.id}
             className={clsx(
-              'rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none',
+              'rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none',
               activePresetId === preset.id
-                ? 'bg-surface text-ink shadow-raised'
-                : 'text-ink-2 hover:text-ink',
+                ? 'bg-ink text-surface'
+                : 'text-ink-3 hover:bg-surface-sunken hover:text-ink',
             )}
           >
             {preset.label}
@@ -86,7 +87,9 @@ function RangeBar() {
         ))}
       </div>
 
-      <div className="flex items-center gap-1.5 text-[12px] text-ink-3">
+      {/* The month bounds read as one chip, like a date-range control. */}
+      <div className="flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-1.5 text-[12px] text-ink-3">
+        <IconCalendar className="size-3.5" />
         <label className="sr-only" htmlFor="range-from">
           From month
         </label>
@@ -123,7 +126,7 @@ function MonthSelect({
       id={id}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="rounded-md border border-line bg-surface px-2 py-1 text-[12px] font-medium text-ink-2 focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+      className="rounded-md bg-transparent py-0.5 text-[12px] font-semibold text-ink focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
     >
       {months.map((month) => (
         <option key={month} value={month}>
@@ -149,7 +152,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               >
                 <span
                   aria-hidden
-                  className="grid size-[26px] place-items-center rounded-[7px] bg-linear-to-b from-brand to-brand-strong text-[12px] font-bold text-white shadow-raised ring-1 ring-black/5"
+                  className="grid size-[26px] place-items-center rounded-[8px] bg-linear-to-b from-accent to-accent-hover text-[12px] font-extrabold text-ink shadow-raised ring-1 ring-black/5"
                 >
                   D
                 </span>

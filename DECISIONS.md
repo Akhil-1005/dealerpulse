@@ -161,9 +161,9 @@ a grow-in each time reads as flicker, not polish.
 ### Dark mode is a second validated palette, not an inversion
 
 Every colour in the app is a semantic role (`--color-ink`, `--color-surface`,
-`--color-critical`), so the two themes differ only in token values and no
+`--color-accent`), so the two themes differ only in token values and no
 component branches on the theme. Dark steps were chosen for the dark surface and
-run through the same validator: blue `#3987e5` + orange `#d95926` on `#161a21`
+run through the same validator: blue `#3987e5` + orange `#d95926` on `#141922`
 clears CVD ΔE 26.8 and normal-vision ΔE 31.8, and every text token clears 4.5:1
 against its own surface.
 
@@ -174,10 +174,32 @@ it with the tab open. And the stored choice is applied by a tiny inline script
 in `<head>`, before React loads, because the bundle arrives far too late to stop
 a white flash.
 
-The one place the light palette is not simply darkened is the critical red. On
-the light surface it is `#d03b3b`; on dark it lifts to `#f0736f` (3.6:1 → 6.1:1).
-Saturated fills belong on small marks, not on large blocks, and a large dark-red
-bar on a dark ground is the exact failure that rule exists to prevent.
+### Two accents, with a strict division of labour
+
+The visual language is gold-led, which creates a real hazard: gold is also the
+natural colour for a "watch this" warning. Both meanings cannot share a hue
+without the alert hierarchy going soft — and the alerts are the most valuable
+thing on the page.
+
+So the roles are split and the split is enforced by naming:
+
+| Token | Job | Never |
+|---|---|---|
+| `--color-accent` (gold) | Interactive fills — primary buttons, active nav, badges, the highlight banner | Text, charts, alerts |
+| `--color-brand` (blue) | Charts and focus rings; validated for colour-blind separation | Buttons |
+| `--color-warning` (orange) | "Watch" severity only | Anything clickable |
+
+Gold measures **2.25:1 on white**, so it is physically incapable of setting
+legible type — the primary button pairs a gold fill with near-black ink (8.05:1)
+rather than the white text these palettes usually invite. Warning moved from
+amber to a distinctly redder orange (`#ea6a1e`) so a severity marker can never
+be mistaken for a call to action.
+
+The pastel chips behind stat-tile icons are decorative identity, not encoding.
+They make a row of six otherwise identical tiles scannable, and they stay out of
+the charts, where colour has to mean something. Rep and customer avatars derive
+their hue from the record id rather than the row index, so re-sorting a table
+never repaints anyone.
 
 ### A verification harness instead of trusting the aggregates
 

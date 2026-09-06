@@ -10,11 +10,17 @@ import {
   DrillLink,
   EmptyState,
   MiniBar,
-  Stat,
+  StatCard,
   Table,
   Td,
   Th,
 } from '@/components/ui';
+import {
+  IconAlert,
+  IconCalendar,
+  IconCheck,
+  IconPipeline,
+} from '@/components/icons';
 import {
   formatDays,
   formatINR,
@@ -72,32 +78,38 @@ export function Pipeline() {
         </p>
       </header>
 
-      <Card>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-7 sm:grid-cols-4">
-          <Stat
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <StatCard
+            icon={<IconPipeline />}
+            chip="blue"
             label="Open pipeline"
             value={formatINR(forecast.pipelineValue)}
             hint={`${formatNumber(forecast.openCount)} leads, face value`}
           />
-          <Stat
+          <StatCard
+            icon={<IconCheck />}
+            chip="mint"
             label="Expected to close"
             value={formatINR(forecast.expectedRevenue)}
             hint={`${forecast.expectedUnits.toFixed(1)} units, risk-adjusted`}
             tone="good"
           />
-          <Stat
+          <StatCard
+            icon={<IconAlert />}
+            chip="rose"
             label="Ageing write-down"
             value={formatINR(forecast.ageingWritedown)}
             hint={`${formatPct(writedownShare)} of the raw estimate`}
             tone={writedownShare > 0.2 ? 'critical' : 'neutral'}
           />
-          <Stat
+          <StatCard
             label="Likely within 30 days"
             value={formatINR(forecast.expectedRevenueNext30)}
             hint={`${forecast.expectedUnitsNext30.toFixed(1)} units`}
+            icon={<IconCalendar />}
+            chip="violet"
           />
-        </div>
-      </Card>
+      </div>
 
       {writedownShare > 0.15 && (
         <Card className="border-warning/30 bg-warning-tint">
