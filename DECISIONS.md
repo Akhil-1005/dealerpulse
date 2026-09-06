@@ -138,6 +138,23 @@ per branch would let a branch with slow leads declare itself unmeasurable, which
 is precisely the excuse a dashboard should not offer. Org filters are dropped
 before the maturity check runs.
 
+The gate had to reach one place I missed on the first pass: the **period-on-period
+chip** beside the conversion tile. Neutralising the tile's colour was not enough,
+because the chip compares December's 13-day-old cohort against November's
+46-day-old one and prints **−96%** in red — an elapsed-time artefact sitting
+directly beside a notice explaining why not to read it that way. A conversion
+delta needs *both* windows aged, not just the current one, so it is withheld
+unless both qualify. Every other chip on the page is safe: lead counts are mature
+the moment a lead is created, and revenue and units are bookings-lens facts.
+
+**And the caveat is stated once.** An earlier version said it twice — a narrative
+bullet and the notice card, forty pixels apart, in two wordings with the same two
+numbers. The notice keeps it: it is visually distinct, it carries the "widen the
+range" instruction, and the narrative list should stay the CEO's read of the
+*business* rather than a note about method. On an immature window the narrative
+simply makes no claim about conversion at all, which is the honest thing for it
+to do.
+
 The same lens confusion had produced a second bug on the Branches page, where
 the group benchmark divided bookings-lens deliveries by a cohort-lens
 denominator. That is not a rate at all — it printed **69.3%** for a month whose
@@ -290,7 +307,7 @@ never repaints anyone.
 
 ### A verification harness instead of trusting the aggregates
 
-`npm run verify` asserts 75 figures against values derived independently from
+`npm run verify` asserts 80 figures against values derived independently from
 the raw JSON — totals, funnel counts, branch splits, the forecast bounds, alert
 behaviour, and invariants like "branch numbers sum to the company total". It
 caught a real bug: comparing a funnel against itself reported a leak of ~1e-14

@@ -102,15 +102,37 @@ export function Overview() {
       sources: computeSources(cohort),
       narrative: buildNarrative(filter),
       maturity,
+      prevMaturity: previous ? cohortMaturity(previous) : null,
     };
   }, [from, to]);
 
-  const { kpis, prevKpis, narrative, alerts, scorecards, struggling, maturity } =
-    model;
+  const {
+    kpis,
+    prevKpis,
+    narrative,
+    alerts,
+    scorecards,
+    struggling,
+    maturity,
+    prevMaturity,
+  } = model;
 
   const delta = (current: number, previousValue: number | undefined) =>
     prevKpis && previousValue !== undefined && previousValue > 0
       ? current / previousValue - 1
+      : null;
+
+  /**
+   * Conversion is the one KPI whose period-on-period change is not a fact about
+   * performance until both cohorts have aged. December converts at 1.3% against
+   * November's 32.6% — a −96% chip — almost entirely because December's leads
+   * have had 13 days to close and November's have had 46. Showing that in red
+   * beside a notice explaining not to read it that way is the same defect the
+   * gate exists to remove, so the chip is withheld unless both windows qualify.
+   */
+  const conversionDelta =
+    maturity.isMature && prevMaturity?.isMature
+      ? delta(kpis.conversionRate, prevKpis?.conversionRate)
       : null;
 
   const maxRevenue = Math.max(...scorecards.map((s) => s.revenue), 1);
@@ -211,7 +233,7 @@ export function Overview() {
           <StatCard
             label="Lead → delivery"
             value={formatPct(kpis.conversionRate, 1)}
-            delta={delta(kpis.conversionRate, prevKpis?.conversionRate)}
+            delta={conversionDelta}
             series={model.trend.map((t) => t.conversionRate)}
             icon={<IconFunnel />}
             chip="violet"

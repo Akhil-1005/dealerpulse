@@ -7,6 +7,7 @@
  */
 import { AS_OF, branches, leads, months, targets } from '../src/lib/data';
 import { computeAlerts } from '../src/lib/alerts';
+import { buildNarrative } from '../src/lib/narrative';
 import { computeForecast } from '../src/lib/forecast';
 import {
   branchScorecards,
@@ -17,6 +18,7 @@ import {
   defaultFilter,
   leadCohort,
   openLeads,
+  previousWindow,
   staleLeads,
   sum,
   worstRelativeLeak,
@@ -327,6 +329,40 @@ check(
   'December group benchmark (%)',
   (computeKpis(lastMonth).conversionRate * 100).toFixed(1),
   '1.3',
+);
+
+/*
+  A period-on-period conversion chip needs *both* windows aged, not just the
+  current one. December converts at 1.3% against November's 32.6% purely because
+  its leads have had 13 days to close against 46 — a -96% chip that measures the
+  calendar, not the business.
+*/
+const bothMature = (f: Filter) => {
+  const prev = previousWindow(f);
+  return cohortMaturity(f).isMature && !!prev && cohortMaturity(prev).isMature;
+};
+check('conversion delta withheld on the last-month window', bothMature(lastMonth), false);
+check('conversion delta allowed on the last-three-month window', bothMature(lastThree), true);
+
+/*
+  The maturity caveat belongs to the page once, in the notice. The narrative is
+  the CEO's read of the business and must not restate the methodology beside it.
+*/
+const immaturePoints = buildNarrative(lastMonth).points;
+check(
+  'narrative makes no conversion-spread claim on an immature window',
+  immaturePoints.some((p) => /normal band|converts [\d.]+% of its leads/.test(p)),
+  false,
+);
+check(
+  'narrative does not restate the maturity caveat',
+  immaturePoints.some((p) => /not readable|days to close/.test(p)),
+  false,
+);
+check(
+  'the spread claim returns once the cohort has aged',
+  buildNarrative(lastThree).points.some((p) => p.startsWith('Performance is uneven')),
+  true,
 );
 
 console.log(
