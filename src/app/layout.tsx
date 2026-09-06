@@ -107,12 +107,22 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    // The font variables must live on <html>, not <body>: `--font-sans` is
+    // declared inside @theme, which emits it on :root, and a var() nested in a
+    // custom property resolves at the element that declares it. With the font
+    // variable on <body>, `var(--font-sans-family)` is undefined at :root, the
+    // whole chain computes to the guaranteed-invalid value, and every element
+    // silently falls back to the system stack.
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${sans.variable} ${mono.variable}`}
+    >
       <head>
         {/* Applies the stored theme before first paint — no white flash. */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className={`${sans.variable} ${mono.variable}`}>
+      <body>
         {/* useSearchParams needs a Suspense boundary above it in Next 15. */}
         <Suspense fallback={<ShellFallback />}>
           <FilterProvider>
