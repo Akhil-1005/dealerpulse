@@ -40,7 +40,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             onClick={onNavigate}
             aria-current={active ? 'page' : undefined}
             className={clsx(
-              'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none',
+              'inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-[13px] font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none',
               active
                 ? 'bg-accent-tint text-accent-ink'
                 : 'text-ink-2 hover:bg-surface-sunken hover:text-ink',
@@ -63,7 +63,7 @@ function RangeBar() {
   const { from, to, setRange, activePresetId } = useFilter();
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
       <div
         role="group"
         aria-label="Time range presets"
@@ -76,7 +76,7 @@ function RangeBar() {
             onClick={() => setRange(preset.from, preset.to)}
             aria-pressed={activePresetId === preset.id}
             className={clsx(
-              'rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none',
+              'rounded-lg px-3.5 py-1.5 text-[12px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none',
               activePresetId === preset.id
                 ? 'bg-ink text-surface'
                 : 'text-ink-3 hover:bg-surface-sunken hover:text-ink',
@@ -144,29 +144,37 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-dvh">
       <header className="sticky top-0 z-20 border-b border-line bg-surface/80 backdrop-blur-xl">
         <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
-          <div className="flex h-14 items-center justify-between gap-4">
-            <div className="flex items-center gap-5">
-              <Link
-                href="/"
-                className="flex items-center gap-2 rounded focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+          {/*
+            Three columns with equal 1fr flanks and an auto middle, so the nav
+            sits optically centred in the header no matter how wide the brand or
+            the controls happen to be. A flex row with justify-between would
+            centre it only by coincidence.
+          */}
+          <div className="grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-4">
+            <Link
+              href="/"
+              className="flex min-w-0 items-center gap-2 justify-self-start rounded focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+            >
+              <span
+                aria-hidden
+                className="grid size-[26px] shrink-0 place-items-center rounded-[8px] bg-linear-to-b from-accent to-accent-hover text-[12px] font-extrabold text-ink shadow-raised ring-1 ring-black/5"
               >
-                <span
-                  aria-hidden
-                  className="grid size-[26px] place-items-center rounded-[8px] bg-linear-to-b from-accent to-accent-hover text-[12px] font-extrabold text-ink shadow-raised ring-1 ring-black/5"
-                >
-                  D
-                </span>
-                <span className="text-[15px] font-semibold tracking-[-0.014em] text-ink">
-                  DealerPulse
-                </span>
-              </Link>
-              <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
-                <NavLinks />
-              </nav>
-            </div>
+                D
+              </span>
+              <span className="truncate text-[15px] font-semibold tracking-[-0.014em] text-ink">
+                DealerPulse
+              </span>
+            </Link>
 
-            <div className="flex items-center gap-3">
-              <p className="hidden text-[12px] text-ink-3 lg:block">
+            <nav
+              aria-label="Primary"
+              className="hidden items-center gap-1.5 justify-self-center md:flex lg:gap-2.5"
+            >
+              <NavLinks />
+            </nav>
+
+            <div className="flex items-center gap-3 justify-self-end">
+              <p className="hidden text-[12px] whitespace-nowrap text-ink-3 lg:block">
                 Data as of {formatDate(AS_OF)}
               </p>
               <ThemeToggle />
@@ -176,7 +184,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {/* Tablet/mobile nav drops to its own scrollable row. */}
           <nav
             aria-label="Primary"
-            className="-mx-1 flex items-center gap-1 overflow-x-auto pb-2 md:hidden"
+            className="-mx-1 flex items-center gap-1.5 overflow-x-auto pb-2 md:hidden"
           >
             <NavLinks />
           </nav>
