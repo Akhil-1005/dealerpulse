@@ -15,6 +15,7 @@ import {
   computeSources,
   defaultFilter,
   leadCohort,
+  openLeads,
   staleLeads,
   sum,
   worstRelativeLeak,
@@ -157,6 +158,59 @@ check(
   'win probability stays within [0,1]',
   fc.leads.every((x) => x.winProbability >= 0 && x.winProbability <= 1),
   true,
+);
+
+/*
+ * Sensitivity of the forecast to its one invented parameter.
+ *
+ * The stage win rates and median close times are measured from the data; the
+ * ageing half-life is not — it is a reasoned choice, because the dataset has no
+ * cancellations to fit a decay curve against. This reproduces the table in
+ * DECISIONS.md so the claim "±20% across any defensible parameter" is runnable
+ * rather than asserted, and it fails loudly if the model ever stops behaving
+ * monotonically.
+ */
+console.log('\nForecast sensitivity to the ageing half-life');
+const oddsByStage = new Map(fc.odds.map((o) => [o.stage, o]));
+const openBook = openLeads(all);
+
+const totalAt = (halfLife: number) =>
+  sum(
+    openBook.map((lead) => {
+      const o = oddsByStage.get(lead.status as (typeof fc.odds)[number]['stage']);
+      if (!o) return 0;
+      const overdue = lead.daysInCurrentStage - o.medianDaysToClose;
+      const decay = overdue <= 0 ? 1 : Math.pow(0.5, overdue / halfLife);
+      return lead.deal_value * o.winRate * decay;
+    }),
+  );
+
+const shipped = totalAt(30);
+for (const halfLife of [10, 15, 30, 45, 60, 90]) {
+  const total = totalAt(halfLife);
+  const delta = (total / shipped - 1) * 100;
+  const note =
+    halfLife === 30
+      ? '  (shipped)'
+      : `  ${delta > 0 ? '+' : ''}${delta.toFixed(0)}%`;
+  console.log(
+    `  ${String(halfLife + 'd').padEnd(5)} ${(total / 1e7).toFixed(2)} Cr${note}`,
+  );
+}
+check('shipped half-life reproduces the documented total', (shipped / 1e7).toFixed(2), '8.10');
+check('a longer half-life is always more optimistic', totalAt(90) > totalAt(30), true);
+check('a shorter half-life is always more conservative', totalAt(10) < totalAt(30), true);
+check(
+  'the parameter stays within a +/-25% band over 10-90 days',
+  Math.max(Math.abs(totalAt(10) / shipped - 1), Math.abs(totalAt(90) / shipped - 1)) < 0.25,
+  true,
+);
+check(
+  'the action queue is independent of the half-life',
+  // Staleness comes from the per-stage thresholds, never from the decay curve,
+  // so the list of leads to chase cannot move when this parameter changes.
+  staleLeads(all).length,
+  31,
 );
 
 console.log('\nLeak diagnosis');

@@ -120,9 +120,47 @@ That discount removes **₹3.95 Cr — a third of the raw estimate**. The gap
 between the two numbers is, quite literally, the cost of the stalled deliveries
 in the action queue, and the pipeline page says so in those words.
 
-The tradeoff: the half-life is a judgement call, not a fitted parameter. With
-seven months of data and no cancellations recorded, there is nothing to fit it
-against. It is stated openly on the page rather than buried.
+The tradeoff: the half-life is a judgement call, not a fitted parameter. I chose
+30 days because the observed p90 for order-to-delivery is **29 days**, so a month
+past median is roughly where a deal has left normal range. It cannot be fitted —
+the dataset records no cancellations and all 38 stalled orders are still open, so
+there are no outcomes to fit a curve against.
+
+### How much does that guess actually matter?
+
+Since the half-life is the one number in the model I invented rather than
+measured, it is worth knowing how much of the answer rests on it. Holding the
+data fixed and varying only that parameter:
+
+| Half-life | Expected pipeline | vs shipped | Top-10 deal order |
+|---|---|---|---|
+| 10 days | ₹6.66 Cr | −18% | changes |
+| 15 days | ₹7.11 Cr | −12% | changes |
+| **30 days** | **₹8.10 Cr** | — | — |
+| 45 days | ₹8.76 Cr | +8% | changes |
+| 60 days | ₹9.23 Cr | +14% | changes |
+| 90 days | ₹9.86 Cr | +22% | changes |
+
+So the forecast total is genuinely soft: a ±20% band across any defensible choice
+of parameter. It also reshuffles the deal ranking, because the decay scales with
+each lead's own overdue days and a shorter half-life punishes the worst offenders
+hardest. I had assumed the ordering would be invariant; testing it showed
+otherwise, which is exactly why the test is worth running.
+
+The table is reproducible, not asserted: `npm run verify` recomputes it and
+fails if the model ever stops behaving monotonically.
+
+**What does not move is the action queue.** Which leads are flagged as stalled,
+and the order they are ranked in for chasing, comes entirely from the per-stage
+staleness thresholds — the decay curve is not involved. So this parameter affects
+a number the dashboard *reports*, not any decision it *asks you to make*.
+
+That distinction is the reason the forecast is presented as "about ₹8 Cr, and
+here is the assumption driving it" rather than as a precise figure. A model with
+one invented parameter that nobody has stress-tested looks precise and invites
+decisions it cannot support. With outcome data — a quarter of cancellations, or
+stalled leads that later recovered — this becomes a fitted curve per stage, and
+that is the first thing I would do with more history.
 
 ### "Now" is derived from the data, not the clock
 
@@ -203,7 +241,7 @@ never repaints anyone.
 
 ### A verification harness instead of trusting the aggregates
 
-`npm run verify` asserts 60 figures against values derived independently from
+`npm run verify` asserts 65 figures against values derived independently from
 the raw JSON — totals, funnel counts, branch splits, the forecast bounds, alert
 behaviour, and invariants like "branch numbers sum to the company total". It
 caught a real bug: comparing a funnel against itself reported a leak of ~1e-14

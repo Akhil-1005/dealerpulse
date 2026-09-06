@@ -22,7 +22,7 @@ npm run dev          # http://localhost:3000
 ```bash
 npm run build        # production build; all 43 routes prerender
 npm run start
-npm run verify       # 60 assertions against the raw JSON
+npm run verify       # 65 assertions against the raw JSON
 npm run lint
 ```
 
