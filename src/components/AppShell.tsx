@@ -8,13 +8,19 @@ import { AS_OF } from '@/lib/data';
 import { formatDate, formatMonth } from '@/lib/format';
 import { RANGE_PRESETS, useFilter } from './FilterProvider';
 import { ThemeToggle } from './ThemeToggle';
+import {
+  IconBranches,
+  IconOverview,
+  IconPipeline,
+  IconQueue,
+} from './icons';
 import { months } from '@/lib/data';
 
 const NAV = [
-  { href: '/', label: 'Overview' },
-  { href: '/branches', label: 'Branches' },
-  { href: '/actions', label: 'Action Queue' },
-  { href: '/pipeline', label: 'Pipeline' },
+  { href: '/', label: 'Overview', Icon: IconOverview },
+  { href: '/branches', label: 'Branches', Icon: IconBranches },
+  { href: '/actions', label: 'Action Queue', Icon: IconQueue },
+  { href: '/pipeline', label: 'Pipeline', Icon: IconPipeline },
 ];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
@@ -33,12 +39,13 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             onClick={onNavigate}
             aria-current={active ? 'page' : undefined}
             className={clsx(
-              'rounded-md px-3 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none',
+              'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none',
               active
                 ? 'bg-brand-tint text-brand-strong'
                 : 'text-ink-2 hover:bg-surface-sunken hover:text-ink',
             )}
           >
+            <item.Icon className="size-3.5" />
             {item.label}
           </Link>
         );
@@ -132,7 +139,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-20 border-b border-line bg-surface/85 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-line bg-surface/80 backdrop-blur-xl">
         <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
           <div className="flex h-14 items-center justify-between gap-4">
             <div className="flex items-center gap-5">
@@ -142,11 +149,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               >
                 <span
                   aria-hidden
-                  className="grid size-7 place-items-center rounded-md bg-brand text-[13px] font-bold text-white"
+                  className="grid size-[26px] place-items-center rounded-[7px] bg-linear-to-b from-brand to-brand-strong text-[12px] font-bold text-white shadow-raised ring-1 ring-black/5"
                 >
                   D
                 </span>
-                <span className="text-[15px] font-semibold tracking-tight text-ink">
+                <span className="text-[15px] font-semibold tracking-[-0.014em] text-ink">
                   DealerPulse
                 </span>
               </Link>
@@ -173,7 +180,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="sticky top-14 z-10 border-b border-line bg-canvas/90 backdrop-blur">
+      <div className="sticky top-14 z-10 border-b border-line bg-canvas/85 backdrop-blur-xl">
         <div className="mx-auto max-w-[1400px] px-4 py-2.5 sm:px-6">
           <RangeBar />
         </div>
@@ -194,7 +201,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
 
       <footer className="mx-auto max-w-[1400px] px-4 pb-10 sm:px-6">
-        <p className="text-[12px] text-ink-3">
+        <p className="border-t border-line pt-6 text-[12px] text-ink-3">
           DealerPulse — synthetic dealership dataset, June–December 2025. All
           figures derive from lead status histories at read time.
         </p>

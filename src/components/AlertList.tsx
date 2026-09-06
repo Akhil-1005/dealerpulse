@@ -4,6 +4,7 @@ import Link from 'next/link';
 import clsx from 'clsx';
 import type { Alert, Severity } from '@/lib/alerts';
 import { Badge, EmptyState, StatusDot } from './ui';
+import { IconAlert, IconArrowRight, IconInfo, IconWatch } from './icons';
 
 const SEVERITY_LABEL: Record<Severity, string> = {
   critical: 'Needs action now',
@@ -17,62 +18,94 @@ const SEVERITY_TONE: Record<Severity, 'critical' | 'warning' | 'neutral'> = {
   info: 'neutral',
 };
 
+/** Icon plus label, so severity is never carried by colour alone. */
+const SEVERITY_ICON: Record<Severity, typeof IconAlert> = {
+  critical: IconAlert,
+  warning: IconWatch,
+  info: IconInfo,
+};
+
 export function AlertCard({ alert, href }: { alert: Alert; href?: string }) {
-  const tone = SEVERITY_TONE[alert.severity];
+  const SeverityIcon = SEVERITY_ICON[alert.severity];
 
   return (
     <article
       className={clsx(
-        'rounded-card border bg-surface p-5',
-        alert.severity === 'critical' ? 'border-critical/25' : 'border-line',
+        'group relative flex flex-col overflow-hidden rounded-card border bg-surface shadow-card transition-shadow duration-200 hover:shadow-card-hover',
+        alert.severity === 'critical' ? 'border-critical/20' : 'border-line',
       )}
     >
-      <div className="mb-3 flex items-center gap-2">
-        {tone !== 'neutral' && <StatusDot tone={tone} />}
-        <span
-          className={clsx(
-            'text-[11px] font-semibold tracking-wide uppercase',
-            alert.severity === 'critical' && 'text-critical',
-            alert.severity === 'warning' && 'text-warning',
-            alert.severity === 'info' && 'text-ink-3',
+      {/* A hairline accent along the top edge reads the severity before any
+          text does, without tinting the whole card. */}
+      <span
+        aria-hidden
+        className={clsx(
+          'absolute inset-x-0 top-0 h-0.5',
+          alert.severity === 'critical' && 'bg-critical',
+          alert.severity === 'warning' && 'bg-warning-mark',
+          alert.severity === 'info' && 'bg-line-strong',
+        )}
+      />
+
+      <div className="flex flex-1 flex-col p-5 pt-[22px] sm:p-6 sm:pt-[26px]">
+        <div className="mb-3.5 flex items-center gap-1.5">
+          <SeverityIcon
+            className={clsx(
+              'size-3.5',
+              alert.severity === 'critical' && 'text-critical',
+              alert.severity === 'warning' && 'text-warning',
+              alert.severity === 'info' && 'text-ink-3',
+            )}
+          />
+          <span
+            className={clsx(
+              'text-[10.5px] font-semibold tracking-[0.075em] uppercase',
+              alert.severity === 'critical' && 'text-critical',
+              alert.severity === 'warning' && 'text-warning',
+              alert.severity === 'info' && 'text-ink-3',
+            )}
+          >
+            {SEVERITY_LABEL[alert.severity]}
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span
+            className={clsx(
+              'text-[30px] leading-none font-semibold tracking-[-0.025em]',
+              alert.severity === 'critical' ? 'text-critical' : 'text-ink',
+            )}
+          >
+            {alert.headline}
+          </span>
+          <h3 className="text-[15px] leading-snug font-semibold tracking-[-0.011em] text-ink">
+            {alert.title}
+          </h3>
+        </div>
+
+        <p className="mt-3 text-[13px] leading-[1.65] text-ink-2">{alert.body}</p>
+
+        <div className="mt-auto pt-4">
+          <div className="rounded-xl bg-surface-sunken px-4 py-3.5">
+            <p className="text-[10.5px] font-semibold tracking-[0.075em] text-ink-3 uppercase">
+              What to do
+            </p>
+            <p className="mt-1.5 text-[13px] leading-[1.6] text-ink">{alert.action}</p>
+          </div>
+
+          {href && (
+            <Link
+              href={href}
+              className="mt-3.5 inline-flex items-center gap-1.5 rounded text-[13px] font-medium text-brand-strong transition-colors hover:text-brand focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
+            >
+              {alert.leadIds.length > 0
+                ? `See the ${alert.leadIds.length} leads`
+                : 'Investigate'}
+              <IconArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </Link>
           )}
-        >
-          {SEVERITY_LABEL[alert.severity]}
-        </span>
+        </div>
       </div>
-
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span
-          className={clsx(
-            'text-[28px] leading-none font-semibold tracking-tight',
-            alert.severity === 'critical' ? 'text-critical' : 'text-ink',
-          )}
-        >
-          {alert.headline}
-        </span>
-        <h3 className="text-[15px] font-semibold text-ink">{alert.title}</h3>
-      </div>
-
-      <p className="mt-2.5 text-[13px] leading-relaxed text-ink-2">{alert.body}</p>
-
-      <div className="mt-4 rounded-lg bg-surface-sunken px-3.5 py-3">
-        <p className="text-[11px] font-semibold tracking-wide text-ink-3 uppercase">
-          What to do
-        </p>
-        <p className="mt-1 text-[13px] leading-relaxed text-ink">{alert.action}</p>
-      </div>
-
-      {href && (
-        <Link
-          href={href}
-          className="mt-3 inline-flex items-center gap-1 rounded text-[13px] font-medium text-brand-strong hover:underline focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-none"
-        >
-          {alert.leadIds.length > 0
-            ? `See the ${alert.leadIds.length} leads`
-            : 'Investigate'}
-          <span aria-hidden>→</span>
-        </Link>
-      )}
     </article>
   );
 }
@@ -118,7 +151,7 @@ export function AlertStrip({ alerts }: { alerts: Alert[] }) {
       {alerts.map((alert) => (
         <li
           key={alert.id}
-          className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-line bg-surface-sunken px-3.5 py-2.5"
+          className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-line bg-surface px-4 py-3 shadow-raised"
         >
           <StatusDot
             tone={alert.severity === 'info' ? 'warning' : alert.severity}

@@ -1,20 +1,29 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Instrument_Sans, JetBrains_Mono } from 'next/font/google';
 import { Suspense } from 'react';
 import './globals.css';
 import { AppShell } from '@/components/AppShell';
 import { FilterProvider } from '@/components/FilterProvider';
 import { themeInitScript } from '@/components/ThemeToggle';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+/*
+  Instrument Sans — a modern grotesque with noticeably more character than the
+  default UI sans, while staying tight and legible at the 11–13px this dashboard
+  lives at. One family throughout: the hero figures use the same sans as
+  everything else, since a display face on a headline number reads as
+  decoration rather than data.
+*/
+const sans = Instrument_Sans({
+  variable: '--font-sans-family',
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const mono = JetBrains_Mono({
+  variable: '--font-mono-family',
   subsets: ['latin'],
+  weight: ['400', '500'],
   display: 'swap',
 });
 
@@ -103,7 +112,7 @@ export default function RootLayout({
         {/* Applies the stored theme before first paint — no white flash. */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className={`${sans.variable} ${mono.variable}`}>
         {/* useSearchParams needs a Suspense boundary above it in Next 15. */}
         <Suspense fallback={<ShellFallback />}>
           <FilterProvider>

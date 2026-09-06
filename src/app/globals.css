@@ -9,7 +9,7 @@
   Chart colours are validated with the data-viz palette checker, not eyeballed:
     light  surface #ffffff — blue #2a78d6 + orange #eb6834
            (CVD ΔE 24.7, normal-vision ΔE 33.6, both clear 3:1)
-    dark   surface #161a21 — blue #3987e5 + orange #d95926
+    dark   surface #141922 — blue #3987e5 + orange #d95926
            (CVD ΔE 26.8, normal-vision ΔE 31.8, both clear 3:1)
 
   Dark is a *selected* set of steps for the dark surface, not an inverted light
@@ -19,14 +19,17 @@
 
 @theme {
   /* Surfaces */
-  --color-canvas: #f6f7f9;
+  --color-canvas: #f4f5f8;
   --color-surface: #ffffff;
-  --color-surface-sunken: #f9fafb;
-  --color-line: #e6e8ec;
-  --color-line-strong: #d3d7de;
+  --color-surface-sunken: #f6f7f9;
+  --color-surface-raised: #ffffff;
+  /* Hairlines sit close to the surface; depth comes from shadow, not from
+     drawing a darker box around everything. */
+  --color-line: #eceef2;
+  --color-line-strong: #dce0e7;
 
   /* Ink */
-  --color-ink: #12161f;
+  --color-ink: #0d1421;
   --color-ink-2: #4a5265;
   --color-ink-3: #79839a;
 
@@ -52,13 +55,25 @@
   /* Neutral data mark, for "the rest" in a part-to-whole */
   --color-mark-muted: #e3e6ea;
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-sans:
+    var(--font-sans-family), 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-family), ui-monospace, monospace;
 
-  --radius-card: 12px;
+  --radius-card: 14px;
 
-  /* Elevation reads as a shadow on light and as a lifted surface on dark. */
-  --shadow-raised: 0 1px 2px rgba(16, 22, 31, 0.08);
+  /*
+    Elevation. Two stacked shadows — a tight contact shadow plus a wider, softer
+    ambient one — is what stops a card reading as a flat rectangle with a border.
+    On dark, ambient light does not work that way, so depth comes from a lifted
+    surface and a rim highlight instead of a heavier shadow.
+  */
+  --shadow-raised: 0 1px 2px rgba(13, 20, 33, 0.06);
+  --shadow-card:
+    0 1px 2px rgba(13, 20, 33, 0.04), 0 2px 6px -1px rgba(13, 20, 33, 0.05);
+  --shadow-card-hover:
+    0 2px 4px rgba(13, 20, 33, 0.05), 0 8px 20px -4px rgba(13, 20, 33, 0.1);
+  --shadow-popover:
+    0 4px 8px -2px rgba(13, 20, 33, 0.08), 0 16px 32px -8px rgba(13, 20, 33, 0.16);
 }
 
 /*
@@ -72,13 +87,14 @@
   :root:not([data-theme='light']) {
     color-scheme: dark;
 
-    --color-canvas: #0e1116;
-    --color-surface: #161a21;
-    --color-surface-sunken: #1c212a;
-    --color-line: #262c37;
-    --color-line-strong: #38404d;
+    --color-canvas: #0b0e14;
+    --color-surface: #141922;
+    --color-surface-sunken: #1a202b;
+    --color-surface-raised: #191f2a;
+    --color-line: #232a36;
+    --color-line-strong: #333c4b;
 
-    --color-ink: #e8ecf2;
+    --color-ink: #edf0f5;
     --color-ink-2: #a3adbd;
     --color-ink-3: #7a8598;
 
@@ -101,19 +117,27 @@
     --color-mark-muted: #2a313c;
 
     --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-card:
+      0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+    --shadow-card-hover:
+      0 2px 4px rgba(0, 0, 0, 0.45), 0 8px 24px -6px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    --shadow-popover:
+      0 8px 24px -4px rgba(0, 0, 0, 0.6), 0 16px 48px -12px rgba(0, 0, 0, 0.7);
   }
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --color-canvas: #0e1116;
-  --color-surface: #161a21;
-  --color-surface-sunken: #1c212a;
-  --color-line: #262c37;
-  --color-line-strong: #38404d;
+  --color-canvas: #0b0e14;
+  --color-surface: #141922;
+  --color-surface-sunken: #1a202b;
+  --color-surface-raised: #191f2a;
+  --color-line: #232a36;
+  --color-line-strong: #333c4b;
 
-  --color-ink: #e8ecf2;
+  --color-ink: #edf0f5;
   --color-ink-2: #a3adbd;
   --color-ink-3: #7a8598;
 
@@ -136,6 +160,13 @@
   --color-mark-muted: #2a313c;
 
   --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card:
+    0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  --shadow-card-hover:
+    0 2px 4px rgba(0, 0, 0, 0.45), 0 8px 24px -6px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  --shadow-popover:
+    0 8px 24px -4px rgba(0, 0, 0, 0.6), 0 16px 48px -12px rgba(0, 0, 0, 0.7);
 }
 
 :root {
@@ -151,6 +182,23 @@ body {
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Contextual alternates + kerning; the grotesque needs both to sit right. */
+  font-feature-settings: 'kern' 1, 'calt' 1;
+  letter-spacing: -0.004em;
+}
+
+/*
+  Optical sizing by hand: larger text needs tighter tracking, smaller text needs
+  looser, and a single global value cannot serve both.
+*/
+h1 {
+  letter-spacing: -0.023em;
+}
+
+h2,
+h3 {
+  letter-spacing: -0.013em;
 }
 
 /*

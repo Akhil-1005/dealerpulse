@@ -374,6 +374,8 @@ export interface TrendPoint {
   targetUnits: number;
   targetRevenue: number;
   lost: number;
+  /** Cohort conversion for the month — powers the KPI sparklines. */
+  conversionRate: number;
 }
 
 export function computeTrend(f: Filter): TrendPoint[] {
@@ -392,6 +394,7 @@ export function computeTrend(f: Filter): TrendPoint[] {
       targetUnits: sum(scopedTargets.map((t) => t.target_units)),
       targetRevenue: sum(scopedTargets.map((t) => t.target_revenue)),
       lost: cohort.filter((l) => l.isLost).length,
+      conversionRate: ratio(cohort.filter((l) => l.isWon).length, cohort.length),
     };
   });
 }

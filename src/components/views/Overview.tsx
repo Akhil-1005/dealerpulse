@@ -11,6 +11,13 @@ import {
   TrendCharts,
 } from '@/components/charts';
 import {
+  IconAlert,
+  IconBranches,
+  IconFunnel,
+  IconSource,
+  IconTrendUp,
+} from '@/components/icons';
+import {
   Badge,
   Card,
   CardHeader,
@@ -98,16 +105,24 @@ export function Overview() {
       {/* The story, before the numbers                                     */}
       {/* ---------------------------------------------------------------- */}
       <section>
-        <h1 className="text-[22px] leading-snug font-semibold tracking-tight text-ink sm:text-[26px]">
+        <p className="mb-3 text-[11px] font-semibold tracking-[0.075em] text-ink-3 uppercase">
+          The state of the business
+        </p>
+        {/* The headline is the one sentence to read. Tight tracking and a
+            generous measure keep it feeling like a briefing, not a paragraph. */}
+        <h1 className="max-w-5xl text-[25px] leading-[1.28] font-semibold tracking-[-0.023em] text-balance text-ink sm:text-[30px]">
           {narrative.headline}
         </h1>
-        <ul className="mt-4 grid gap-2.5 lg:grid-cols-2">
+        <ul className="mt-6 grid gap-x-10 gap-y-3.5 lg:grid-cols-2">
           {narrative.points.map((point, i) => (
             <li
               key={i}
-              className="flex gap-2.5 text-[13px] leading-relaxed text-ink-2"
+              className="flex gap-3 text-[13px] leading-[1.65] text-ink-2"
             >
-              <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full bg-line-strong" />
+              <span
+                aria-hidden
+                className="mt-[7px] h-px w-3 shrink-0 bg-line-strong"
+              />
               <span>{point}</span>
             </li>
           ))}
@@ -118,27 +133,31 @@ export function Overview() {
       {/* Vital signs                                                       */}
       {/* ---------------------------------------------------------------- */}
       <Card>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-7 sm:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-7 divide-line sm:grid-cols-3 xl:grid-cols-6 xl:gap-x-0 xl:divide-x xl:[&>*]:px-5 xl:[&>*:first-child]:pl-0 xl:[&>*:last-child]:pr-0">
           <Stat
             label="New leads"
             value={formatNumber(kpis.newLeads)}
             delta={delta(kpis.newLeads, prevKpis?.newLeads)}
+            series={model.trend.map((t) => t.newLeads)}
           />
           <Stat
             label="Delivered"
             value={formatNumber(kpis.deliveredUnits)}
             delta={delta(kpis.deliveredUnits, prevKpis?.deliveredUnits)}
             hint="units"
+            series={model.trend.map((t) => t.delivered)}
           />
           <Stat
             label="Revenue"
             value={formatINR(kpis.revenue)}
             delta={delta(kpis.revenue, prevKpis?.revenue)}
+            series={model.trend.map((t) => t.revenue)}
           />
           <Stat
             label="Lead → delivery"
             value={formatPct(kpis.conversionRate, 1)}
             delta={delta(kpis.conversionRate, prevKpis?.conversionRate)}
+            series={model.trend.map((t) => t.conversionRate)}
           />
           <Stat
             label="Median cycle"
@@ -157,7 +176,10 @@ export function Overview() {
       {/* What to do about it                                               */}
       {/* ---------------------------------------------------------------- */}
       <section>
-        <SectionTitle hint="Ranked by value at risk">
+        <SectionTitle
+          icon={<IconAlert className="size-3.5" />}
+          hint="Ranked by value at risk"
+        >
           Needs attention
         </SectionTitle>
         <AlertList
@@ -173,9 +195,10 @@ export function Overview() {
       {/* ---------------------------------------------------------------- */}
       {/* Branch comparison                                                 */}
       {/* ---------------------------------------------------------------- */}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
         <Card>
           <CardHeader
+            icon={<IconBranches className="size-4" />}
             title="Lead-to-delivery conversion by branch"
             subtitle={
               struggling
@@ -258,6 +281,7 @@ export function Overview() {
       {/* ---------------------------------------------------------------- */}
       <Card>
         <CardHeader
+          icon={<IconTrendUp className="size-4" />}
           title="Delivered by month"
           subtitle="Units and revenue on their own scales, never combined onto one pair of axes. Targets are omitted from the plot on purpose — they run about four times actual delivery in this dataset, which would squash every real bar to a sliver. Switch to the figures to see them."
         />
@@ -267,9 +291,10 @@ export function Overview() {
       {/* ---------------------------------------------------------------- */}
       {/* Funnel + sources                                                  */}
       {/* ---------------------------------------------------------------- */}
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid items-start gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader
+            icon={<IconFunnel className="size-4" />}
             title="Where leads are lost"
             subtitle={`Of ${formatNumber(kpis.newLeads)} leads created in this period, ${formatNumber(model.funnel[5].reached)} reached delivery.`}
           />
@@ -282,6 +307,7 @@ export function Overview() {
 
         <Card>
           <CardHeader
+            icon={<IconSource className="size-4" />}
             title="Which sources actually convert"
             subtitle="Share of each source's leads that reached delivery."
           />

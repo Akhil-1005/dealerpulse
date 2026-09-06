@@ -182,7 +182,7 @@ export function BranchDetail({ branchId }: { branchId: string }) {
         <AlertStrip alerts={model.alerts} />
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid items-start gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader
             title="Funnel against the group"
@@ -280,7 +280,7 @@ export function BranchDetail({ branchId }: { branchId: string }) {
         )}
       </Card>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid items-start gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader
             title="Source mix"

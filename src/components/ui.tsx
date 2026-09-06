@@ -11,16 +11,23 @@ export function Card({
   children,
   className,
   padded = true,
+  interactive = false,
 }: {
   children: ReactNode;
   className?: string;
   padded?: boolean;
+  /** Adds a lift on hover. Only for cards that are themselves a link target. */
+  interactive?: boolean;
 }) {
   return (
     <section
       className={clsx(
-        'rounded-card border border-line bg-surface',
+        // Depth comes from a stacked shadow, with the border reduced to a
+        // near-invisible hairline that only defines the edge.
+        'rounded-card border border-line bg-surface shadow-card',
         padded && 'p-5 sm:p-6',
+        interactive &&
+          'transition-[box-shadow,transform] duration-200 hover:-translate-y-px hover:shadow-card-hover',
         className,
       )}
     >
@@ -33,18 +40,29 @@ export function CardHeader({
   title,
   subtitle,
   action,
+  icon,
 }: {
   title: string;
   subtitle?: ReactNode;
   action?: ReactNode;
+  icon?: ReactNode;
 }) {
   return (
     <header className="mb-5 flex items-start justify-between gap-4">
-      <div className="min-w-0">
-        <h2 className="text-[15px] font-semibold tracking-tight text-ink">{title}</h2>
-        {subtitle && (
-          <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{subtitle}</p>
+      <div className="flex min-w-0 gap-3">
+        {icon && (
+          <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-surface-sunken text-ink-3">
+            {icon}
+          </span>
         )}
+        <div className="min-w-0">
+          <h2 className="text-[15px] leading-tight font-semibold tracking-[-0.011em] text-ink">
+            {title}
+          </h2>
+          {subtitle && (
+            <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-2">{subtitle}</p>
+          )}
+        </div>
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </header>
@@ -55,12 +73,21 @@ export function CardHeader({
 // Stat tile
 // ---------------------------------------------------------------------------
 
+/**
+ * A single vital sign.
+ *
+ * The optional `series` draws a sparkline behind the value — a stat tile that
+ * shows only "today" hides whether today is a recovery or the start of a
+ * slide, and the trend data is already computed for the charts below.
+ */
 export function Stat({
   label,
   value,
   delta,
   hint,
   tone = 'neutral',
+  series,
+  invertDelta = false,
 }: {
   label: string;
   value: string;
@@ -68,6 +95,8 @@ export function Stat({
   delta?: number | null;
   hint?: string;
   tone?: 'neutral' | 'good' | 'warning' | 'critical';
+  series?: number[];
+  invertDelta?: boolean;
 }) {
   const toneClass = {
     neutral: 'text-ink',
@@ -77,19 +106,95 @@ export function Stat({
   }[tone];
 
   return (
-    <div className="flex flex-col gap-1">
-      <span className="text-[12px] font-medium tracking-wide text-ink-3 uppercase">
-        {label}
-      </span>
-      {/* Proportional figures, not tabular — tabular reads loose at this size. */}
-      <span className={clsx('text-[26px] leading-none font-semibold tracking-tight', toneClass)}>
+    <div className="flex flex-col gap-1.5">
+      {/* The sparkline rides beside the label, never beside the value — sharing
+          a row with the figure squeezes it into a wrap at narrow columns. */}
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate text-[11px] font-medium tracking-[0.055em] text-ink-3 uppercase">
+          {label}
+        </span>
+        {series && series.length > 1 && <Sparkline values={series} />}
+      </div>
+
+      {/* Proportional figures, not tabular — equal-width digits read loose at
+          display sizes. Negative tracking keeps large numbers from sprawling. */}
+      <span
+        className={clsx(
+          'text-[27px] leading-none font-semibold tracking-[-0.022em] whitespace-nowrap',
+          toneClass,
+        )}
+      >
         {value}
       </span>
-      <span className="mt-1 flex min-h-[18px] items-center gap-2 text-[12px] text-ink-3">
-        {delta !== undefined && delta !== null && <DeltaChip value={delta} />}
+
+      <span className="flex min-h-[18px] items-center gap-2 text-[12px] text-ink-3">
+        {delta !== undefined && delta !== null && (
+          <DeltaChip value={delta} invert={invertDelta} />
+        )}
         {hint && <span className="truncate">{hint}</span>}
       </span>
     </div>
+  );
+}
+
+/**
+ * A bare trend line — no axes, no labels, no tooltip. It answers "which way is
+ * this going" and nothing else; the precise numbers live in the charts below.
+ */
+export function Sparkline({
+  values,
+  className,
+  width = 46,
+  height = 14,
+}: {
+  values: number[];
+  className?: string;
+  width?: number;
+  height?: number;
+}) {
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const span = max - min || 1;
+  const step = width / Math.max(values.length - 1, 1);
+
+  const points = values.map((v, i) => {
+    const x = i * step;
+    // Inset by 1px top and bottom so the stroke is never clipped.
+    const y = height - 1 - ((v - min) / span) * (height - 2);
+    return [x, y] as const;
+  });
+
+  const d = points
+    .map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`)
+    .join(' ');
+  const last = points[points.length - 1];
+  const rising = values[values.length - 1] >= values[0];
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      width={width}
+      height={height}
+      fill="none"
+      aria-hidden
+      className={clsx('shrink-0 overflow-visible', className)}
+    >
+      <path
+        d={d}
+        stroke={rising ? 'var(--color-brand)' : 'var(--color-ink-3)'}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle
+        cx={last[0]}
+        cy={last[1]}
+        r={2}
+        fill={rising ? 'var(--color-brand)' : 'var(--color-ink-3)'}
+        stroke="var(--color-surface)"
+        strokeWidth={1.5}
+      />
+    </svg>
   );
 }
 
@@ -320,16 +425,23 @@ export function MiniBar({
 export function SectionTitle({
   children,
   hint,
+  icon,
 }: {
   children: ReactNode;
   hint?: string;
+  icon?: ReactNode;
 }) {
   return (
-    <div className="mb-3 flex items-baseline justify-between gap-4">
-      <h2 className="text-[13px] font-semibold tracking-wide text-ink-3 uppercase">
+    <div className="mb-4 flex items-center gap-4">
+      <h2 className="flex shrink-0 items-center gap-2 text-[11px] font-semibold tracking-[0.075em] text-ink-3 uppercase">
+        {icon}
         {children}
       </h2>
-      {hint && <span className="text-[12px] text-ink-3">{hint}</span>}
+      {/* A rule filling the gap turns a floating label into a section marker. */}
+      <span aria-hidden className="h-px min-w-4 flex-1 bg-line" />
+      {hint && (
+        <span className="shrink-0 text-[12px] whitespace-nowrap text-ink-3">{hint}</span>
+      )}
     </div>
   );
 }
