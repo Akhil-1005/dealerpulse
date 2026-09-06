@@ -155,3 +155,12 @@ export const IconUser = (p: IconProps) => (
     <path d="M3.2 13.4a4.8 4.8 0 0 1 9.6 0" />
   </Icon>
 );
+
+export const IconTruck = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M1.6 4.2h7.2v6.6H1.6z" />
+    <path d="M8.8 6.6h2.6l2.9 2.4v1.8H8.8z" />
+    <circle cx="4.6" cy="12.2" r="1.3" />
+    <circle cx="11.2" cy="12.2" r="1.3" />
+  </Icon>
+);

@@ -550,9 +550,17 @@ function FunnelTable({
 export function RankedBars({
   rows,
   valueFormat,
+  /**
+   * Widens the label gutter for long categories. Lead sources are one or two
+   * words and fit the default; delivery delay reasons are full phrases
+   * ("Vehicle allocation delayed from factory") and truncate to nonsense
+   * without this.
+   */
+  longLabels = false,
 }: {
   rows: { key: string; label: string; value: number; note?: string; tone?: 'brand' | 'critical' }[];
   valueFormat: (value: number) => string;
+  longLabels?: boolean;
 }) {
   const max = Math.max(...rows.map((r) => r.value), 0);
   if (!rows.length) {
@@ -563,7 +571,15 @@ export function RankedBars({
     <ul className="space-y-2.5">
       {rows.map((row) => (
         <li key={row.key} className="flex items-center gap-3">
-          <span className="w-[104px] shrink-0 truncate text-[12px] text-ink-2 sm:w-[140px]">
+          <span
+            title={row.label}
+            className={clsx(
+              'shrink-0 truncate text-[12px] text-ink-2',
+              longLabels
+                ? 'w-[128px] sm:w-[236px] lg:w-[268px]'
+                : 'w-[104px] sm:w-[140px]',
+            )}
+          >
             {row.label}
           </span>
           <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-sunken">
@@ -579,7 +595,7 @@ export function RankedBars({
             {valueFormat(row.value)}
           </span>
           {row.note && (
-            <span className="nums hidden w-[64px] shrink-0 text-right text-[12px] text-ink-3 sm:block">
+            <span className="nums hidden w-[78px] shrink-0 text-right text-[12px] whitespace-nowrap text-ink-3 sm:block">
               {row.note}
             </span>
           )}

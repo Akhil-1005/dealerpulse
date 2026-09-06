@@ -168,7 +168,7 @@ across every mature range.
 
 The brief's example ("not contacted in 7+ days") is right in spirit but wrong as
 a single rule. A brand-new enquiry going quiet for two days is a problem; an
-order awaiting delivery is not, until it passes the observed p90 of ~29 days. So
+order awaiting delivery is not, until it passes the observed p90 of 28 days. So
 each stage carries its own patience: new 2d, contacted 5d, test drive 7d,
 negotiation 10d, order placed 21d. A flat threshold would bury four genuine
 emergencies under thirty false positives. This keeps the queue at 31 leads —
@@ -187,7 +187,7 @@ between the two numbers is, quite literally, the cost of the stalled deliveries
 in the action queue, and the pipeline page says so in those words.
 
 The tradeoff: the half-life is a judgement call, not a fitted parameter. I chose
-30 days because the observed p90 for order-to-delivery is **29 days**, so a month
+30 days because the observed p90 for order-to-delivery is **28 days**, so a month
 past median is roughly where a deal has left normal range. It cannot be fitted —
 the dataset records no cancellations and all 38 stalled orders are still open, so
 there are no outcomes to fit a curve against.
@@ -327,6 +327,25 @@ Four things, all of which shaped the product.
 genuinely stuck. 26 are past the 21-day window; the oldest has been waiting
 **195 days**. This is revenue already won and not banked, and it became the
 dashboard's headline alert.
+
+That alert used to end with advice I made up — "chase allocation, RTO and
+finance disbursement" — which was plausible, overlapped the truth, and was still
+a guess. The dataset records the answer: **72 of 160 completed deliveries
+slipped**, led by customer-requested date changes (18), logistics (11) and
+factory allocation (11). It varies sharply by site — **Central slips on 26% of
+its deliveries, Downtown on 55%** — so the alert now names the causes actually
+observed in that branch's own history.
+
+The care needed is in what that claim can support. Every one of the 38 stuck
+orders has *no* delivery record, so not one of them contributes a
+`delay_reason`; these figures are a **base rate from deliveries that completed**,
+not a diagnosis of what is stuck now. The alert says so in those words, and the
+branch card repeats the distinction. Two guards keep it honest: a branch needs
+at least six delayed deliveries *and* a leading cause of at least four before it
+is allowed to quote its own pattern — Central has eight delays but its top cause
+is two of them, so it borrows the group's steadier prior rather than presenting a
+coin flip as a finding. Lakeside, with three, does the same and says so on the
+card.
 
 ### Lakeside Toyota is broken, and it is not the reps
 

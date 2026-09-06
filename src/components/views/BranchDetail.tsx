@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { notFound } from 'next/navigation';
+import clsx from 'clsx';
 import { useFilter } from '@/components/FilterProvider';
 import { AlertStrip } from '@/components/AlertList';
 import { FunnelView, RankedBars } from '@/components/charts';
@@ -23,6 +24,7 @@ import {
   IconFunnel,
   IconPipeline,
   IconQueue,
+  IconTruck,
   IconUser,
 } from '@/components/icons';
 import { computeAlerts } from '@/lib/alerts';
@@ -39,6 +41,7 @@ import {
   computeKpis,
   computeLossReasons,
   computeSources,
+  deliveryPerformance,
   leadCohort,
   previousWindow,
   repScorecards,
@@ -70,6 +73,8 @@ export function BranchDetail({ branchId }: { branchId: string }) {
       prevKpis: previous ? computeKpis(previous) : null,
       companyKpis: computeKpis(company),
       maturity: cohortMaturity(filter),
+      delivery: deliveryPerformance(filter),
+      companyDelivery: deliveryPerformance(company),
       cohort,
       funnel,
       companyFunnel,
@@ -244,6 +249,92 @@ export function BranchDetail({ branchId }: { branchId: string }) {
         </Card>
       </div>
 
+      {/*
+        Losing a lead and delivering one late are different failures with
+        different owners, so this sits apart from the funnel above. It reads the
+        delay reasons the dealership already records — and is careful to say
+        that it describes deliveries which completed, not the orders currently
+        stuck, which carry no delivery record and therefore no logged cause.
+      */}
+      <Card>
+        <CardHeader
+          icon={<IconTruck className="size-4" />}
+          title="Why deliveries slip here"
+          subtitle={
+            model.delivery.completed === 0
+              ? 'No vehicle was delivered from this branch in the selected period.'
+              : `Recorded causes across ${formatNumber(model.delivery.completed)} completed deliveries. These are the branch's historic reasons, not a diagnosis of the orders currently stuck — those have no delivery record yet, so no cause is logged on them.`
+          }
+        />
+
+        {model.delivery.completed === 0 ? (
+          <EmptyState
+            title="Nothing delivered in this period"
+            body="Widen the time range to see this branch's delivery record."
+          />
+        ) : (
+          <>
+            <div className="mb-5 grid grid-cols-2 gap-x-6 gap-y-4 border-b border-line pb-5 sm:grid-cols-4">
+              <DeliveryStat
+                label="Slipped"
+                value={formatPct(model.delivery.delayRate)}
+                hint={`${formatNumber(model.delivery.delayed)} of ${formatNumber(model.delivery.completed)}`}
+                tone={
+                  model.delivery.delayRate > model.companyDelivery.delayRate
+                    ? 'critical'
+                    : 'neutral'
+                }
+              />
+              <DeliveryStat
+                label="Median"
+                value={formatDays(model.delivery.medianDays)}
+                hint={`group ${formatDays(model.companyDelivery.medianDays)}`}
+              />
+              <DeliveryStat
+                label="Slowest 10%"
+                value={`over ${formatDays(model.delivery.p90Days)}`}
+                hint="order to delivery"
+              />
+              <DeliveryStat
+                label="On time"
+                value={formatNumber(model.delivery.onTime)}
+                hint="no delay recorded"
+              />
+            </div>
+
+            {model.delivery.causes.length ? (
+              <>
+                <RankedBars
+                  longLabels
+                  rows={model.delivery.causes.map((cause) => ({
+                    key: cause.reason,
+                    label: cause.reason,
+                    value: cause.count,
+                    note: `${Math.round(cause.medianDays)}d median`,
+                    tone: 'critical' as const,
+                  }))}
+                  valueFormat={(v) => formatNumber(v)}
+                />
+                {/* n is small at some branches; say so rather than implying a trend. */}
+                {model.delivery.delayed < 6 && (
+                  <p className="mt-4 border-t border-line pt-4 text-[13px] leading-relaxed text-ink-2">
+                    Only {formatNumber(model.delivery.delayed)} delayed deliveries
+                    here, so treat the ranking as indicative. The group pattern is
+                    the safer guide at this sample size.
+                  </p>
+                )}
+              </>
+            ) : (
+              <EmptyState
+                tone="good"
+                title="Every delivery was on time"
+                body="No delay reason was recorded against any delivery from this branch in this period."
+              />
+            )}
+          </>
+        )}
+      </Card>
+
       <Card padded={false}>
         <div className="p-5 sm:p-6">
           <CardHeader
@@ -377,6 +468,42 @@ export function BranchDetail({ branchId }: { branchId: string }) {
           )}
         </Card>
       </div>
+    </div>
+  );
+}
+
+/**
+ * A compact figure for the delivery card's header row.
+ *
+ * Deliberately not a `StatCard`: these four are supporting detail inside a card
+ * that already has its own heading, and nesting bordered tiles inside a bordered
+ * card reads as clutter at this density.
+ */
+function DeliveryStat({
+  label,
+  value,
+  hint,
+  tone = 'neutral',
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: 'neutral' | 'critical';
+}) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold tracking-[0.06em] text-ink-3 uppercase">
+        {label}
+      </p>
+      <p
+        className={clsx(
+          'nums mt-1 text-[18px] font-semibold tracking-[-0.01em]',
+          tone === 'critical' ? 'text-critical' : 'text-ink',
+        )}
+      >
+        {value}
+      </p>
+      {hint && <p className="mt-0.5 text-[11.5px] text-ink-3">{hint}</p>}
     </div>
   );
 }

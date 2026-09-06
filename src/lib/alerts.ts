@@ -9,12 +9,13 @@
  * list, so each branch contributes at most one health alert — whichever leak is
  * genuinely its primary problem — rather than one per failing metric.
  */
-import { branches, leads } from './data';
+import { branches, leads, months } from './data';
 import { formatDays, formatINR, formatPct } from './format';
 import {
   worstRelativeLeak,
   cohortMaturity,
   computeFunnel,
+  deliveryPerformance,
   isStale,
   leadCohort,
   openLeads,
@@ -54,6 +55,66 @@ const SEVERITY_RANK: Record<Severity, number> = {
 // Rule: orders placed but never delivered
 // ---------------------------------------------------------------------------
 
+/**
+ * Where to start chasing a stuck order, from the delay reasons the dealership
+ * actually records.
+ *
+ * These orders have no delivery record, so none of them carries a cause — the
+ * evidence here is the *base rate* from deliveries that did complete in the same
+ * scope. That is a prior, not a diagnosis, and the wording says so. It still
+ * beats naming plausible-sounding causes in prose, which is what this string
+ * used to do.
+ *
+ * Scope mirrors the alert itself: branch filter applies, dates do not, because a
+ * stuck order is a fact about now and a wider history gives a steadier prior.
+ * Falls back to the group when a branch has delivered too little to be worth
+ * quoting, and to generic advice when even that is thin.
+ */
+function chaseGuidance(f: Filter): string {
+  const allTime = { ...f, from: months[0], to: months[months.length - 1] };
+  const scoped = deliveryPerformance({ ...allTime, repId: null });
+  const group = deliveryPerformance({
+    ...allTime,
+    branchId: null,
+    repId: null,
+  });
+
+  // A prior is only worth quoting when its leading cause is distinguishable
+  // from the rest. Central Toyota has 8 delayed deliveries but its top cause
+  // accounts for 2 of them — "most often" would be overclaiming a coin flip, so
+  // that branch borrows the group's steadier prior instead.
+  const quotable = (p: typeof scoped) => p.delayed >= 6 && (p.causes[0]?.count ?? 0) >= 4;
+  const [perf, scopeLabel] = quotable(scoped)
+    ? ([scoped, f.branchId ? 'here' : 'across the group'] as const)
+    : quotable(group)
+      ? ([group, 'across the group'] as const)
+      : ([null, ''] as const);
+
+  if (!perf || perf.causes.length === 0) {
+    return 'Chase allocation, RTO and finance disbursement before these customers cancel.';
+  }
+
+  const [first, second] = perf.causes;
+  const alsoSecond = second ? ` or ${midSentence(second.reason)}` : '';
+
+  return (
+    `No cause is logged on these yet, but ${formatPct(perf.delayRate)} of completed ` +
+    `deliveries ${scopeLabel} slipped, most often on ${midSentence(first.reason)} ` +
+    `(${first.count} of ${perf.delayed})${alsoSecond}. Start there, and chase before ` +
+    `these customers cancel.`
+  );
+}
+
+/**
+ * Drops a sentence-cased reason into running prose without flattening the
+ * acronyms the dealership uses — "RTO registration delay" and "PDI rework
+ * required" must not become "rto" and "pdi".
+ */
+const midSentence = (reason: string) =>
+  /^[A-Z]{2,}\b/.test(reason)
+    ? reason
+    : reason.charAt(0).toLowerCase() + reason.slice(1);
+
 function stuckDeliveries(f: Filter): Alert[] {
   const stuck = openLeads(f)
     .filter((l) => l.status === 'order_placed' && isStale(l))
@@ -77,9 +138,7 @@ function stuckDeliveries(f: Filter): Alert[] {
           oldest.daysSinceActivity,
         )} — ${oldest.customer_name} at ${oldest.branchName}, ` +
         `${formatINR(oldest.deal_value)}.`,
-      action:
-        'Revenue already won but not banked. Chase allocation, RTO and finance ' +
-        'disbursement before these customers cancel.',
+      action: `Revenue already won but not banked. ${chaseGuidance(f)}`,
       valueAtRisk: value,
       branchId: f.branchId,
       leadIds: stuck.map((l) => l.id),

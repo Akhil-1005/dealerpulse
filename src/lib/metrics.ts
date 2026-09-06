@@ -91,6 +91,87 @@ export function median(values: number[]): number {
 export const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
 const ratio = (a: number, b: number) => (b === 0 ? 0 : a / b);
 
+/** Linearly interpolated percentile — `q` in [0,1]. */
+export function percentile(values: number[], q: number): number {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const idx = (sorted.length - 1) * q;
+  const lo = Math.floor(idx);
+  const hi = Math.ceil(idx);
+  return lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+}
+
+// ---------------------------------------------------------------------------
+// Delivery performance
+// ---------------------------------------------------------------------------
+
+export interface DelayCause {
+  reason: string;
+  count: number;
+  /** Share of *delayed* deliveries attributed to this cause. */
+  share: number;
+  /** Median order-to-delivery days among deliveries with this cause. */
+  medianDays: number;
+}
+
+export interface DeliveryPerformance {
+  completed: number;
+  delayed: number;
+  onTime: number;
+  delayRate: number;
+  medianDays: number;
+  p90Days: number;
+  /** Ranked by frequency. Empty when nothing in scope was delayed. */
+  causes: DelayCause[];
+}
+
+/**
+ * What happened to orders that *did* reach delivery: how long they took, how
+ * often they slipped, and why.
+ *
+ * The scope is the bookings lens, because a delivery belongs to the month it
+ * landed. Read the result as a **base rate**, not as a diagnosis of anything
+ * currently stuck: every one of the 38 open `order_placed` leads has no delivery
+ * record at all, so none of them contributes a `delay_reason` here. What this
+ * answers is "when deliveries at this branch slip, what usually causes it" —
+ * which is a prior worth acting on when chasing an order whose cause is not yet
+ * logged, and is a good deal better than guessing at the causes in prose.
+ */
+export function deliveryPerformance(f: Filter): DeliveryPerformance {
+  const records = deliveredIn(f)
+    .map((l) => l.delivery)
+    .filter((d): d is NonNullable<typeof d> => d !== null);
+
+  const durations = records.map((d) => d.days_to_deliver);
+  const delayedRecords = records.filter((d) => d.delay_reason);
+
+  const byReason = new Map<string, number[]>();
+  for (const record of delayedRecords) {
+    const bucket = byReason.get(record.delay_reason!) ?? [];
+    bucket.push(record.days_to_deliver);
+    byReason.set(record.delay_reason!, bucket);
+  }
+
+  const causes: DelayCause[] = [...byReason.entries()]
+    .map(([reason, days]) => ({
+      reason,
+      count: days.length,
+      share: ratio(days.length, delayedRecords.length),
+      medianDays: median(days),
+    }))
+    .sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason));
+
+  return {
+    completed: records.length,
+    delayed: delayedRecords.length,
+    onTime: records.length - delayedRecords.length,
+    delayRate: ratio(delayedRecords.length, records.length),
+    medianDays: median(durations),
+    p90Days: percentile(durations, 0.9),
+    causes,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Cohort maturity
 // ---------------------------------------------------------------------------
@@ -516,7 +597,7 @@ export function computeLossReasons(cohort: Lead[]): LossRow[] {
 /**
  * Per-stage patience thresholds. A brand-new enquiry going quiet for two days
  * is a problem; an order awaiting delivery is not, until it passes the observed
- * p90 of roughly 29 days. A single flat threshold would bury the genuine
+ * p90 of 28 days. A single flat threshold would bury the genuine
  * emergencies under dozens of false positives, so each stage gets its own.
  */
 export const STALE_THRESHOLD_DAYS: Record<PipelineStage, number> = {

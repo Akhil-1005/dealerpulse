@@ -131,8 +131,8 @@ export function buildNarrative(f: Filter): Narrative {
     points.push(
       `Against target the picture looks alarming — ${formatNumber(kpis.deliveredUnits)} ` +
         `units against a target of ${formatNumber(kpis.targetUnits)}. Treat that with ` +
-        `caution: the targets in this dataset total ${formatNumber(kpis.targetUnits)} units ` +
-        `against only ${formatNumber(totalLeads)} leads ever received, so they are not ` +
+        `caution: the targets covering this period total ${formatNumber(kpis.targetUnits)} units ` +
+        `against only ${formatNumber(totalLeads)} leads received in it, so they are not ` +
         `reachable by any branch and are better read as a relative benchmark than a goal.`,
     );
   }
